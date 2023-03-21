@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Xml.Linq;
+using System.Net.Http.Json;
+using System.Text.Json.Nodes;
 
 namespace EventGenerator.Handlers
 {
@@ -14,43 +16,28 @@ namespace EventGenerator.Handlers
 
         public static async Task<Dictionary<string, string>> GetRepositoryTree(bool recursive = true)
         {
-            Dictionary<string, string> result = new Dictionary<string, string>();
+            Dictionary<string, string> result = new();
+            HttpClient httpClient = new();
+            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
+            var contentsUrl = $"https://api.github.com/repos/robece/event-generator/git/trees/3ae2609ae4aede6abb5def6d09813f683ea58d78?recursive={recursive}";
 
-            var httpClient = new HttpClient();
             try
             {
-                httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
-                var contentsUrl = $"https://api.github.com/repos/robece/event-generator/git/trees/3ae2609ae4aede6abb5def6d09813f683ea58d78?recursive=true";
-                var contentsJson = await httpClient.GetStringAsync(contentsUrl);
+                var httpResponseMessage = await httpClient.GetAsync(contentsUrl);
+                httpResponseMessage.EnsureSuccessStatusCode();
 
-                var contents = JsonConvert.DeserializeObject(contentsJson) as JObject;
-                if (contents == null)
-                    return result;
+                var contents = await httpResponseMessage.Content.ReadFromJsonAsync<JsonObject>();
 
-                var tree = contents.GetValue("tree");
-                if (tree == null)
-                    return result;
-
-                var aTree = tree.Value<JArray>();
-                if (aTree == null)
-                    return result;
-
-                foreach (var record in aTree)
+                if (contents is not null && contents.TryGetPropertyValue("tree", out JsonNode? aTree) && aTree is not null)
                 {
-                    var o = (JObject)record;
+                    foreach (var record in aTree.AsArray())
+                    {
+                        var path = record?["path"]?.ToString();
+                        var type = record?["type"]?.ToString();
+                        if (type is not null && path is not null)
+                            result.Add(path, type);
+                    }
 
-                    var path = o.GetValue("path");
-                    if (path == null) { continue; }
-                    var sPath = path.Value<string>();
-
-                    var type = o.GetValue("type");
-                    if (type == null) { continue; }
-                    var sType = type.Value<string>();
-
-                    if (sPath == null) { continue; }
-                    if (sType == null) { continue; }
-
-                    result.Add(sPath, sType);
                 }
             }
             catch (Exception ex)
