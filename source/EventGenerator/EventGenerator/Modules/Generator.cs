@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections;
+using System.Text.RegularExpressions;
 using EventGenerator.Handlers;
 using Terminal.Gui;
 
 namespace EventGenerator.Modules
 {
-    public class Events
+    public class Generator
     {
         #region private members
 
-        List<KeyValuePair<string, string>> _repositoryTree;
+        private List<KeyValuePair<string, string>> _repositoryTree = new List<KeyValuePair<string, string>>();
         private string _stage = "sourceName"; // _stage: 1. sourceName, 2. versionType, 3. version, 4. eventType, 5. review
         private string _selectedSourceName = string.Empty;
         private int _selectedSourceNameIdx = -1;
@@ -35,14 +36,16 @@ namespace EventGenerator.Modules
         private Label? _lblSystemSourceVersionType = null;
         private Label? _lblSystemSourceVersion = null;
         private Label? _lblSystemSourceEventType = null;
+        private Label? _lblNumberOfEvents = null;
+        private TextField? _txtNumberOfEvents = null;
 
         #endregion
 
         #region constructor
 
-        public Events(List<KeyValuePair<string, string>> repositoryTree)
+        public Generator()
         {
-            _repositoryTree = repositoryTree;
+            
         }
 
         #endregion
@@ -51,14 +54,17 @@ namespace EventGenerator.Modules
 
         public async Task DisplayDialogAsync()
         {
-            await BuildDialogAsync();
+            var dictRepositoryTree = await GitHubTreeHandler.GetRepositoryTree();
+            _repositoryTree = dictRepositoryTree.ToList<KeyValuePair<string, string>>();
+
+            await CreateDialogAsync();
         }
 
         #endregion
 
         #region private methods
 
-        private async Task BuildDialogAsync()
+        private async Task CreateDialogAsync()
         {
             var buttons = new List<Button>();
 
@@ -82,7 +88,6 @@ namespace EventGenerator.Modules
             buttons.Add(_btnNext);
 
             _dialog = new Dialog("Generate system source events", buttons.ToArray());
-            _dialog.ColorScheme = Colors.Base;
 
             var systemSourceText = "Select a system source:";
             _lblTitle = new Label(systemSourceText)
@@ -104,6 +109,9 @@ namespace EventGenerator.Modules
                 Height = Dim.Fill() - 2,
                 Visible = true
             };
+
+            if (_repositoryTree == null)
+                return;
 
             var sources = EventSourceHandler.GetSources(_repositoryTree);
             await _lvDetails.SetSourceAsync((IList)sources);
@@ -153,6 +161,42 @@ namespace EventGenerator.Modules
                 Visible = false
             };
             _dialog.Add(_lblSystemSourceEventType);
+
+            _lblNumberOfEvents = new Label("Number of events (Up to 50 events):")
+            {
+                X = 1,
+                Y = Pos.Bottom(_lblSystemSourceEventType) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 25,
+                Height = 1,
+                Visible = false
+            };
+            _dialog.Add(_lblNumberOfEvents);
+
+            _txtNumberOfEvents = new TextField("")
+            {
+                X = 1,
+                Y = Pos.Bottom(_lblNumberOfEvents) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 10,
+                Height = 1,
+                Visible = false
+            };
+            _dialog.Add(_txtNumberOfEvents);
+
+            _txtNumberOfEvents.TextChanged +=  (e) => 
+            {
+                var strTextToReplace = _txtNumberOfEvents.Text.ToString();
+                if (string.IsNullOrEmpty(strTextToReplace))
+                    return;
+
+                if (_txtNumberOfEvents.Text.Length > 4 || Regex.IsMatch (strTextToReplace, "[^0-9]+"))
+                {
+                    var cp = _txtNumberOfEvents.CursorPosition;
+                    _txtNumberOfEvents.Text = e;
+                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+                }
+            };
 
             _scrollBarView = new ScrollBarView(_lvDetails, true);
 
@@ -222,7 +266,8 @@ namespace EventGenerator.Modules
             if (_btnBack == null || _btnNext == null ||
                 _lblTitle == null || _lvDetails == null ||
                 _lblSystemSource == null || _lblSystemSourceVersionType == null ||
-                _lblSystemSourceVersion == null || _lblSystemSourceEventType == null)
+                _lblSystemSourceVersion == null || _lblSystemSourceEventType == null ||
+                _lblNumberOfEvents == null || _txtNumberOfEvents == null)
                 return;
 
             switch (_stage)
@@ -237,6 +282,8 @@ namespace EventGenerator.Modules
                     await _lvDetails.SetSourceAsync((IList)sources);
                     _lvDetails.SelectedItem = _selectedSourceNameIdx;
 
+                    _btnNext.Enabled = (sources.Count > 0) ? true : false;
+
                     break;
 
                 case "version":
@@ -248,6 +295,8 @@ namespace EventGenerator.Modules
                     await _lvDetails.SetSourceAsync((IList)versionTypes);
                     _lvDetails.SelectedItem = _selectedVersionTypeIdx;
 
+                    _btnNext.Enabled = (versionTypes.Count > 0) ? true : false;
+
                     break;
 
                 case "eventType":
@@ -258,6 +307,8 @@ namespace EventGenerator.Modules
                     var versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     await _lvDetails.SetSourceAsync((IList)versions);
                     _lvDetails.SelectedItem = _selectedVersionIdx;
+
+                    _btnNext.Enabled = (versions.Count > 0) ? true : false;
 
                     break;
 
@@ -272,11 +323,15 @@ namespace EventGenerator.Modules
                     _lblSystemSourceVersionType.Visible = false;
                     _lblSystemSourceVersion.Visible = false;
                     _lblSystemSourceEventType.Visible = false;
+                    _lblNumberOfEvents.Visible = false;
+                    _txtNumberOfEvents.Visible = false;
 
                     _lblTitle.Text = "Select an event type:";
                     var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
                     _lvDetails.SelectedItem = _selectedEventTypeIdx;
+
+                    _btnNext.Enabled = (eventTypes.Count > 0) ? true : false;
 
                     break;
             }
@@ -287,7 +342,8 @@ namespace EventGenerator.Modules
             if (_btnBack == null || _btnNext == null ||
             _lblTitle == null || _lvDetails == null ||
             _lblSystemSource == null || _lblSystemSourceVersionType == null ||
-            _lblSystemSourceVersion == null || _lblSystemSourceEventType == null)
+            _lblSystemSourceVersion == null || _lblSystemSourceEventType == null ||
+            _lblNumberOfEvents == null || _txtNumberOfEvents == null)
                 return;
 
             switch (_stage)
@@ -308,6 +364,8 @@ namespace EventGenerator.Modules
                     var versionTypes = EventSourceHandler.GetVersionTypes(_repositoryTree, _selectedSourceName);
                     await _lvDetails.SetSourceAsync((IList)versionTypes);
 
+                    _btnNext.Enabled = (versionTypes.Count > 0) ? true : false;
+
                     break;
                 case "versionType":
                     _stage = "version";
@@ -322,6 +380,8 @@ namespace EventGenerator.Modules
                     _lblTitle.Text = "Select a version:";
                     var versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     await _lvDetails.SetSourceAsync((IList)versions);
+                    
+                    _btnNext.Enabled = (versions.Count > 0) ? true : false;
 
                     break;
                 case "version":
@@ -338,12 +398,12 @@ namespace EventGenerator.Modules
                     var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
 
+                    _btnNext.Enabled = (eventTypes.Count > 0) ? true : false;
+
                     break;
 
                 case "eventType":
                     _stage = "review";
-                    _btnNext.SetFocus();
-
                     _selectedEventTypeIdx = _lvDetails.SelectedItem;
 
                     eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
@@ -356,16 +416,20 @@ namespace EventGenerator.Modules
                     _lblSystemSourceVersionType.Visible = true;
                     _lblSystemSourceVersion.Visible = true;
                     _lblSystemSourceEventType.Visible = true;
+                    _lblNumberOfEvents.Visible = true;
+                    _txtNumberOfEvents.Visible = true;
                     _lblSystemSource.Text = $"- System source: {_selectedSourceName}";
                     _lblSystemSourceVersionType.Text = $"- Version type: {_selectedVersionType}";
                     _lblSystemSourceVersion.Text = $"- Version: {_selectedVersion}";
                     _lblSystemSourceEventType.Text = $"- Event type: {_selectedEventType}";
 
+                    _txtNumberOfEvents.SetFocus();
+
                     break;
             }
 
         }
+
+        #endregion
     }
 }
-
-#endregion

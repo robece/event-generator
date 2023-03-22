@@ -1,6 +1,4 @@
 ﻿using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Xml.Linq;
 using System.Net.Http.Json;
@@ -19,7 +17,7 @@ namespace EventGenerator.Handlers
             Dictionary<string, string> result = new();
             HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
-            var contentsUrl = $"https://api.github.com/repos/robece/event-generator/git/trees/3ae2609ae4aede6abb5def6d09813f683ea58d78?recursive={recursive}";
+            var contentsUrl = $"https://api.github.com/repos/robece/event-generator/git/trees/12c913f7094ab128194de0ff81c36b6a4c968ca3?recursive={recursive}";
 
             try
             {
