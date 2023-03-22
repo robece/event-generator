@@ -105,37 +105,36 @@ namespace EventGenerator.Modules
                     new MenuItem ("_Quit", "", () => Quit()),
                 }),
                 new MenuBarItem ("_Edit", new MenuItem [] {
-                    new MenuItem ("_Copy", "", () => Copy(),null,null, Key.CtrlMask | Key.C),
-                    new MenuItem ("C_ut", "", () => Cut(),null,null, Key.CtrlMask | Key.W),
-                    new MenuItem ("_Paste", "", () => Paste(),null,null, Key.CtrlMask | Key.Y),
+                    new MenuItem ("_Copy", "", () => Copy()),
+                    new MenuItem ("C_ut", "", () => Cut()),
+                    new MenuItem ("_Paste", "", () => Paste()),
                     null,
-                    new MenuItem ("_Find", "", () => Find(),null,null, Key.CtrlMask | Key.S),
-                    new MenuItem ("Find _Next", "", () => FindNext(),null,null, Key.CtrlMask | Key.ShiftMask | Key.S),
-                    new MenuItem ("Find P_revious", "", () => FindPrevious(),null,null, Key.CtrlMask | Key.ShiftMask | Key.AltMask | Key.S),
-                    new MenuItem ("_Replace", "", () => Replace(),null,null, Key.CtrlMask | Key.R),
-                    new MenuItem ("Replace Ne_xt", "", () => ReplaceNext(),null,null, Key.CtrlMask | Key.ShiftMask | Key.R),
-                    new MenuItem ("Replace _All", "", () => ReplaceAll(),null,null, Key.CtrlMask | Key.ShiftMask | Key.AltMask | Key.A),
+                    new MenuItem ("_Find", "", () => Find()),
+                    new MenuItem ("Find _Next", "", () => FindNext()),
+                    new MenuItem ("Find P_revious", "", () => FindPrevious()),
+                    new MenuItem ("_Replace", "", () => Replace()),
+                    new MenuItem ("Replace Ne_xt", "", () => ReplaceNext()),
+                    new MenuItem ("Replace _All", "", () => ReplaceAll()),
                     null,
-                    new MenuItem ("_Select All", "", () => SelectAll(),null,null, Key.CtrlMask | Key.T)
+                    new MenuItem ("_Select All", "", () => SelectAll())
                 }),
                 new MenuBarItem("E_vents", new MenuItem []
                 {
                     new MenuItem ("_Generate system source events", "", async () => await generator.DisplayDialogAsync()),
                     new MenuItem ("_Send events to Azure Event Grid", "", () => new NotImplementedException()),
                 }),
-                new MenuBarItem ("Forma_t", new MenuItem [] {
-                    CreateWrapChecked()
-                })
-            }); ;
-
+                // new MenuBarItem ("Forma_t", new MenuItem [] {
+                //     CreateWrapChecked()
+                // })
+            });
+            menu.Key = Key.F1;
             Application.Top.Add(menu);
-
 
             var statusBar = new StatusBar(new StatusItem[] {
                 siCursorPosition,
-                new StatusItem(Key.F2, "~F2~ Open", () => Open()),
-                new StatusItem(Key.F3, "~F3~ Save", () => Save()),
-                new StatusItem(Key.F4, "~F4~ Save As", () => SaveAs()),
+                new StatusItem(Key.F1, "~F1~ Activate Menu", null),
+                new StatusItem(Key.F2, "~F2~ Generate Events", async () => await generator.DisplayDialogAsync()),
+                new StatusItem(Key.F3, "~F3~ Publish Events", () => new NotImplementedException()),           
                 new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit()),
                 new StatusItem(Key.Null, $"OS Clipboard IsSupported : {Clipboard.IsSupported}", null),
                 new StatusItem(Key.Null, $"Version : {Program.Version}", null)

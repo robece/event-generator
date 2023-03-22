@@ -190,11 +190,38 @@ namespace EventGenerator.Modules
                 if (string.IsNullOrEmpty(strTextToReplace))
                     return;
 
-                if (_txtNumberOfEvents.Text.Length > 4 || Regex.IsMatch (strTextToReplace, "[^0-9]+"))
+                if (Regex.IsMatch (strTextToReplace, "[^0-9]+"))
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
                     _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+
+                    MessageBox.Query("Error", "Input value is not a number", "Ok");
+
+                    return;
+                }
+
+                if (_txtNumberOfEvents.Text.Length > 2)
+                {
+                    var cp = _txtNumberOfEvents.CursorPosition;
+                    _txtNumberOfEvents.Text = e;
+                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+
+                    MessageBox.Query("Error", "Max length reached", "Ok");
+
+                    return;
+                }
+
+                int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
+                if (numberOfEvents > 50)
+                {
+                    var cp = _txtNumberOfEvents.CursorPosition;
+                    _txtNumberOfEvents.Text = e;
+                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+
+                    MessageBox.Query("Error", "Max value reached", "Ok");
+
+                    return;
                 }
             };
 
