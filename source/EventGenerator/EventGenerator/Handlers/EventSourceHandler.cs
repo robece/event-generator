@@ -4,7 +4,7 @@
     {
         public EventSourceHandler()
         {
-        }
+        }      
 
         public static List<string> GetSources(List<KeyValuePair<string, string>> repositoryTree)
         {
@@ -32,6 +32,7 @@
             {
                 Console.WriteLine(ex.Message);
             }
+
             return result;
         }
 
@@ -39,34 +40,9 @@
         {
             List<string> result = new List<string>();
 
-            try
-            {
-                string path = $"{sourceName}/";
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    kv.Key.Replace(path, "");
-                }
-
-                int level = 2;
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    string[] words = kv.Key.Split('/');
-                    if (words.Length == level)
-                    {
-                        if (!string.IsNullOrEmpty(words[0]))
-                        {
-                            if (kv.Value == "tree")
-                                if (!result.Contains(words[level-1]))
-                                    result.Add(words[level-1]);
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            string path = $"{sourceName}/";
+            int level = 2;
+            result = GetList(repositoryTree, path, level, "tree");
 
             return result;
         }
@@ -74,36 +50,11 @@
         public static List<string> GetVersions(List<KeyValuePair<string, string>> repositoryTree, string sourceName, string versionType)
         {
             List<string> result = new List<string>();
-
-            try
-            {
-                string path = $"{sourceName}/{versionType}/";
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    kv.Key.Replace(path, "");
-                }
-
-                int level = 3;
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    string[] words = kv.Key.Split('/');
-                    if (words.Length == level)
-                    {
-                        if (!string.IsNullOrEmpty(words[0]))
-                        {
-                            if (kv.Value == "tree")
-                                if (!result.Contains(words[level-1]))
-                                    result.Add(words[level-1]);
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
+            
+            string path = $"{sourceName}/{versionType}/";
+            int level = 3;
+            result = GetList(repositoryTree, path, level, "tree");
+            
             return result;
         }
 
@@ -111,35 +62,10 @@
         {
             List<string> result = new List<string>();
 
-            try
-            {
-                string path = $"{sourceName}/{versionType}/{version}/examples/";
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    kv.Key.Replace(path, "");
-                }
-
-                int level = 5;
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
-                {
-                    string[] words = kv.Key.Split('/');
-                    if (words.Length == level)
-                    {
-                        if (!string.IsNullOrEmpty(words[0]))
-                        {
-                            if (kv.Value == "tree")
-                                if (!result.Contains(words[level-1]))
-                                    result.Add(words[level-1]);
-                        }
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
+            string path = $"{sourceName}/{versionType}/{version}/examples/";
+            int level = 5;
+            result = GetList(repositoryTree, path, level, "tree");
+            
             return result;
         }
 
@@ -147,15 +73,24 @@
         {
             List<string> result = new List<string>();
 
+            string path = $"{sourceName}/{versionType}/{version}/examples/{eventSchema}/ai/";
+            int level = 7;
+            result = GetList(repositoryTree, path, level, "blob");       
+
+            return result;
+        }
+
+        private static List<string> GetList(List<KeyValuePair<string, string>> repositoryTree, string path, int level, string type)
+        {
+            List<string> result = new List<string>();
+
             try
             {
-                string path = $"{sourceName}/{versionType}/{version}/examples/{eventSchema}/ai/";
                 foreach (KeyValuePair<string, string> kv in repositoryTree)
                 {
                     kv.Key.Replace(path, "");
                 }
-
-                int level = 7;
+             
                 foreach (KeyValuePair<string, string> kv in repositoryTree)
                 {
                     string[] words = kv.Key.Split('/');
@@ -163,15 +98,14 @@
                     {
                         if (!string.IsNullOrEmpty(words[0]))
                         {
-                            if (kv.Value == "blob")
+                            if (kv.Value == type)
                                 if (!result.Contains(words[level-1]))
                                     result.Add(words[level-1]);
                         }
                     }
                 }
-
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
@@ -180,4 +114,3 @@
         }
     }
 }
-
