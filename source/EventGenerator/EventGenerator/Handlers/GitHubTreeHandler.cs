@@ -16,7 +16,7 @@ namespace EventGenerator.Handlers
             HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
             var contentsUrl = $"https://api.github.com/repos/robece/event-generator-specs/contents?ref=main";
-            
+
             try
             {
                 var httpResponseMessage = await httpClient.GetAsync(contentsUrl);
@@ -29,7 +29,7 @@ namespace EventGenerator.Handlers
                     foreach (var record in contents.AsArray())
                     {
                         var name = record?["name"]?.ToString();
-                        
+
                         if (name is not null)
                             if (name == "data-plane")
                             {

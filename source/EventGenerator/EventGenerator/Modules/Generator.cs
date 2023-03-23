@@ -36,7 +36,7 @@ namespace EventGenerator.Modules
         private Label? _lblSelectedSourceName = null;
         private Label? _lblSelectedVersionType = null;
         private Label? _lblSelectedVersion = null;
-        private Label? _lblSelectedEventSchema= null;
+        private Label? _lblSelectedEventSchema = null;
         private Label? _lblSelectedEventType = null;
         private Label? _lblNumberOfEvents = null;
         private TextField? _txtNumberOfEvents = null;

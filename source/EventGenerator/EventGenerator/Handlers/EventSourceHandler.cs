@@ -4,7 +4,7 @@
     {
         public EventSourceHandler()
         {
-        }      
+        }
 
         public static List<string> GetSources(List<KeyValuePair<string, string>> repositoryTree)
         {
@@ -50,11 +50,11 @@
         public static List<string> GetVersions(List<KeyValuePair<string, string>> repositoryTree, string sourceName, string versionType)
         {
             List<string> result = new List<string>();
-            
+
             string path = $"{sourceName}/{versionType}/";
             int level = 3;
             result = GetList(repositoryTree, path, level, "tree");
-            
+
             return result;
         }
 
@@ -65,7 +65,7 @@
             string path = $"{sourceName}/{versionType}/{version}/examples/";
             int level = 5;
             result = GetList(repositoryTree, path, level, "tree");
-            
+
             return result;
         }
 
@@ -75,8 +75,8 @@
 
             string path = $"{sourceName}/{versionType}/{version}/examples/{eventSchema}/ai/";
             int level = 7;
-            result = GetList(repositoryTree, path, level, "blob");       
-
+            result = GetList(repositoryTree, path, level, "blob");
+            result.ForEach((s) => { s.Replace(".prompt", ""); });
             return result;
         }
 
@@ -90,7 +90,7 @@
                 {
                     kv.Key.Replace(path, "");
                 }
-             
+
                 foreach (KeyValuePair<string, string> kv in repositoryTree)
                 {
                     string[] words = kv.Key.Split('/');
@@ -99,8 +99,8 @@
                         if (!string.IsNullOrEmpty(words[0]))
                         {
                             if (kv.Value == type)
-                                if (!result.Contains(words[level-1]))
-                                    result.Add(words[level-1]);
+                                if (!result.Contains(words[level - 1]))
+                                    result.Add(words[level - 1]);
                         }
                     }
                 }
