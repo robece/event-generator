@@ -1,25 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace EventGenerator.Handlers
+﻿namespace EventGenerator.Handlers
 {
-	public class EventSourceHandler
-	{
-		public EventSourceHandler()
-		{
-		}
+    public class EventSourceHandler
+    {
+        public EventSourceHandler()
+        {
+        }
 
         public static List<string> GetSources(List<KeyValuePair<string, string>> repositoryTree)
-		{
-			List<string> result = new List<string>();
+        {
+            List<string> result = new List<string>();
 
-			try
-			{
+            try
+            {
                 foreach (KeyValuePair<string, string> kv in repositoryTree)
                 {
                     string[] words = kv.Key.Split('/');
 
-					if (words.Length > 0)
+                    if (words.Length > 0)
                     {
                         // source
                         if (!string.IsNullOrEmpty(words[0]))
@@ -28,13 +25,13 @@ namespace EventGenerator.Handlers
                                 if (!result.Contains(words[0]))
                                     result.Add(words[0]);
                         }
-                    }						
+                    }
                 }
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 Console.WriteLine(ex.Message);
-			}
+            }
             return result;
         }
 

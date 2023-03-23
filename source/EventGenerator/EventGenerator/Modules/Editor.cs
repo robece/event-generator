@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using EventGenerator.Handlers;
-using Terminal.Gui;
+﻿using Terminal.Gui;
 
 namespace EventGenerator.Modules
 {
@@ -42,7 +39,7 @@ namespace EventGenerator.Modules
         {
             CreateEditorWindow();
         }
-        
+
         #endregion
 
         #region private methods
@@ -83,7 +80,8 @@ namespace EventGenerator.Modules
 
             var siCursorPosition = new StatusItem(Key.Null, "", null);
 
-            _textView.UnwrappedCursorPosition += (e) => {
+            _textView.UnwrappedCursorPosition += (e) =>
+            {
                 siCursorPosition.Title = $"Ln {e.Y + 1}, Col {e.X + 1}";
             };
 
@@ -134,7 +132,7 @@ namespace EventGenerator.Modules
                 siCursorPosition,
                 new StatusItem(Key.F1, "~F1~ Activate Menu", null),
                 new StatusItem(Key.F2, "~F2~ Generate Events", async () => await generator.DisplayDialogAsync()),
-                new StatusItem(Key.F3, "~F3~ Publish Events", () => new NotImplementedException()),           
+                new StatusItem(Key.F3, "~F3~ Publish Events", () => new NotImplementedException()),
                 new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit()),
                 new StatusItem(Key.Null, $"OS Clipboard IsSupported : {Clipboard.IsSupported}", null),
                 new StatusItem(Key.Null, $"Version : {Program.Version}", null)
@@ -143,7 +141,8 @@ namespace EventGenerator.Modules
 
             _scrollBarView = new ScrollBarView(_textView, true);
 
-            _scrollBarView.ChangedPosition += () => {
+            _scrollBarView.ChangedPosition += () =>
+            {
                 _textView.TopRow = _scrollBarView.Position;
                 if (_textView.TopRow != _scrollBarView.Position)
                 {
@@ -152,7 +151,8 @@ namespace EventGenerator.Modules
                 _textView.SetNeedsDisplay();
             };
 
-            _scrollBarView.OtherScrollBarView.ChangedPosition += () => {
+            _scrollBarView.OtherScrollBarView.ChangedPosition += () =>
+            {
                 _textView.LeftColumn = _scrollBarView.OtherScrollBarView.Position;
                 if (_textView.LeftColumn != _scrollBarView.OtherScrollBarView.Position)
                 {
@@ -161,7 +161,8 @@ namespace EventGenerator.Modules
                 _textView.SetNeedsDisplay();
             };
 
-            _scrollBarView.VisibleChanged += () => {
+            _scrollBarView.VisibleChanged += () =>
+            {
                 if (_scrollBarView.Visible && _textView.RightOffset == 0)
                 {
                     _textView.RightOffset = 1;
@@ -172,7 +173,8 @@ namespace EventGenerator.Modules
                 }
             };
 
-            _scrollBarView.OtherScrollBarView.VisibleChanged += () => {
+            _scrollBarView.OtherScrollBarView.VisibleChanged += () =>
+            {
                 if (_scrollBarView.OtherScrollBarView.Visible && _textView.BottomOffset == 0)
                 {
                     _textView.BottomOffset = 1;
@@ -183,7 +185,8 @@ namespace EventGenerator.Modules
                 }
             };
 
-            _textView.DrawContent += (e) => {
+            _textView.DrawContent += (e) =>
+            {
                 _scrollBarView.Size = _textView.Lines;
                 _scrollBarView.Position = _textView.TopRow;
                 if (_scrollBarView.OtherScrollBarView != null)
@@ -195,7 +198,8 @@ namespace EventGenerator.Modules
                 _scrollBarView.Refresh();
             };
 
-            _editorWindow.KeyPress += (e) => {
+            _editorWindow.KeyPress += (e) =>
+            {
                 var keys = ShortcutHelper.GetModifiersKey(e.KeyEvent);
                 if (_findReplaceWindow != null && (e.KeyEvent.Key == Key.Esc
                     || e.KeyEvent.Key == (Key.Q | Key.CtrlMask)))
@@ -554,7 +558,8 @@ namespace EventGenerator.Modules
             };
             item.CheckType |= MenuItemCheckStyle.Checked;
             item.Checked = true;
-            item.Action += () => {
+            item.Action += () =>
+            {
 
                 if (_textView == null || _scrollBarView == null)
                     return;
