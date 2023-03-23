@@ -10,13 +10,15 @@ namespace EventGenerator.Modules
         #region private members
 
         private List<KeyValuePair<string, string>> _repositoryTree = new List<KeyValuePair<string, string>>();
-        private string _stage = "sourceName"; // _stage: 1. sourceName, 2. versionType, 3. version, 4. eventType, 5. review
+        private string _stage = "sourceName"; // _stage: 1. sourceName, 2. versionType, 3. version, 4. eventSchema, 6. eventType, 7. review
         private string _selectedSourceName = string.Empty;
         private int _selectedSourceNameIdx = -1;
         private string _selectedVersionType = string.Empty;
         private int _selectedVersionTypeIdx = -1;
         private string _selectedVersion = string.Empty;
         private int _selectedVersionIdx = -1;
+        private string _selectedEventSchema = string.Empty;
+        private int _selectedEventSchemaIdx = -1;
         private string _selectedEventType = string.Empty;
         private int _selectedEventTypeIdx = -1;
 
@@ -31,10 +33,11 @@ namespace EventGenerator.Modules
         private Label? _lblTitle = null;
         private ListView? _lvDetails = null;
         private ScrollBarView? _scrollBarView = null;
-        private Label? _lblSystemSource = null;
-        private Label? _lblSystemSourceVersionType = null;
-        private Label? _lblSystemSourceVersion = null;
-        private Label? _lblSystemSourceEventType = null;
+        private Label? _lblSelectedSourceName = null;
+        private Label? _lblSelectedVersionType = null;
+        private Label? _lblSelectedVersion = null;
+        private Label? _lblSelectedEventSchema= null;
+        private Label? _lblSelectedEventType = null;
         private Label? _lblNumberOfEvents = null;
         private TextField? _txtNumberOfEvents = null;
 
@@ -117,7 +120,7 @@ namespace EventGenerator.Modules
 
             _dialog.Add(_lvDetails);
 
-            _lblSystemSource = new Label("System source:")
+            _lblSelectedSourceName = new Label("System source:")
             {
                 X = 1,
                 Y = Pos.Bottom(_lblTitle) + 1,
@@ -126,45 +129,56 @@ namespace EventGenerator.Modules
                 Height = 1,
                 Visible = false
             };
-            _dialog.Add(_lblSystemSource);
+            _dialog.Add(_lblSelectedSourceName);
 
-            _lblSystemSourceVersionType = new Label("Version type:")
+            _lblSelectedVersionType = new Label("Version type:")
             {
                 X = 1,
-                Y = Pos.Bottom(_lblSystemSource) + 1,
+                Y = Pos.Bottom(_lblSelectedSourceName) + 1,
                 TextAlignment = TextAlignment.Left,
                 Width = 25,
                 Height = 1,
                 Visible = false
             };
-            _dialog.Add(_lblSystemSourceVersionType);
+            _dialog.Add(_lblSelectedVersionType);
 
-            _lblSystemSourceVersion = new Label("Version:")
+            _lblSelectedVersion = new Label("Version:")
             {
                 X = 1,
-                Y = Pos.Bottom(_lblSystemSourceVersionType) + 1,
+                Y = Pos.Bottom(_lblSelectedVersionType) + 1,
                 TextAlignment = TextAlignment.Left,
                 Width = 25,
                 Height = 1,
                 Visible = false
             };
-            _dialog.Add(_lblSystemSourceVersion);
+            _dialog.Add(_lblSelectedVersion);
 
-            _lblSystemSourceEventType = new Label("Event type:")
+            _lblSelectedEventSchema = new Label("Event schema:")
             {
                 X = 1,
-                Y = Pos.Bottom(_lblSystemSourceVersion) + 1,
+                Y = Pos.Bottom(_lblSelectedVersion) + 1,
                 TextAlignment = TextAlignment.Left,
                 Width = 25,
                 Height = 1,
                 Visible = false
             };
-            _dialog.Add(_lblSystemSourceEventType);
+            _dialog.Add(_lblSelectedEventSchema);
 
-            _lblNumberOfEvents = new Label("Number of events (Up to 50 events):")
+            _lblSelectedEventType = new Label("Event type:")
             {
                 X = 1,
-                Y = Pos.Bottom(_lblSystemSourceEventType) + 1,
+                Y = Pos.Bottom(_lblSelectedEventSchema) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 25,
+                Height = 1,
+                Visible = false
+            };
+            _dialog.Add(_lblSelectedEventType);
+
+            _lblNumberOfEvents = new Label("Number of events (Up to 10 events):")
+            {
+                X = 1,
+                Y = Pos.Bottom(_lblSelectedEventType) + 1,
                 TextAlignment = TextAlignment.Left,
                 Width = 25,
                 Height = 1,
@@ -212,7 +226,7 @@ namespace EventGenerator.Modules
                 }
 
                 int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
-                if (numberOfEvents > 50)
+                if (numberOfEvents > 10)
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
@@ -281,6 +295,8 @@ namespace EventGenerator.Modules
             _selectedVersionTypeIdx = -1;
             _selectedVersion = string.Empty;
             _selectedVersionIdx = -1;
+            _selectedEventSchema = string.Empty;
+            _selectedEventSchemaIdx = -1;
             _selectedEventType = string.Empty;
             _selectedEventTypeIdx = -1;
 
@@ -291,8 +307,8 @@ namespace EventGenerator.Modules
         {
             if (_btnBack == null || _btnNext == null ||
                 _lblTitle == null || _lvDetails == null ||
-                _lblSystemSource == null || _lblSystemSourceVersionType == null ||
-                _lblSystemSourceVersion == null || _lblSystemSourceEventType == null ||
+                _lblSelectedSourceName == null || _lblSelectedVersionType == null ||
+                _lblSelectedVersion == null || _lblSelectedEventSchema == null || _lblSelectedEventType == null ||
                 _lblNumberOfEvents == null || _txtNumberOfEvents == null)
                 return;
 
@@ -325,7 +341,7 @@ namespace EventGenerator.Modules
 
                     break;
 
-                case "eventType":
+                case "eventSchema":
                     _stage = "version";
                     _btnBack.SetFocus();
 
@@ -338,6 +354,19 @@ namespace EventGenerator.Modules
 
                     break;
 
+                case "eventType":
+                    _stage = "eventSchema";
+                    _btnBack.SetFocus();
+
+                    _lblTitle.Text = "Select an event schema:";
+                    var eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    await _lvDetails.SetSourceAsync((IList)eventSchemas);
+                    _lvDetails.SelectedItem = _selectedEventSchemaIdx;
+
+                    _btnNext.Enabled = (eventSchemas.Count > 0) ? true : false;
+
+                    break;
+
                 case "review":
                     _stage = "eventType";
                     _btnBack.SetFocus();
@@ -345,15 +374,16 @@ namespace EventGenerator.Modules
                     _btnNext.Text = "_Next";
                     _lblTitle.Visible = true;
                     _lvDetails.Visible = true;
-                    _lblSystemSource.Visible = false;
-                    _lblSystemSourceVersionType.Visible = false;
-                    _lblSystemSourceVersion.Visible = false;
-                    _lblSystemSourceEventType.Visible = false;
+                    _lblSelectedSourceName.Visible = false;
+                    _lblSelectedVersionType.Visible = false;
+                    _lblSelectedVersion.Visible = false;
+                    _lblSelectedEventSchema.Visible = false;
+                    _lblSelectedEventType.Visible = false;
                     _lblNumberOfEvents.Visible = false;
                     _txtNumberOfEvents.Visible = false;
 
                     _lblTitle.Text = "Select an event type:";
-                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
                     _lvDetails.SelectedItem = _selectedEventTypeIdx;
 
@@ -367,8 +397,8 @@ namespace EventGenerator.Modules
         {
             if (_btnBack == null || _btnNext == null ||
             _lblTitle == null || _lvDetails == null ||
-            _lblSystemSource == null || _lblSystemSourceVersionType == null ||
-            _lblSystemSourceVersion == null || _lblSystemSourceEventType == null ||
+            _lblSelectedSourceName == null || _lblSelectedVersionType == null ||
+            _lblSelectedVersion == null || _lblSelectedEventSchema == null || _lblSelectedEventType == null ||
             _lblNumberOfEvents == null || _txtNumberOfEvents == null)
                 return;
 
@@ -411,7 +441,7 @@ namespace EventGenerator.Modules
 
                     break;
                 case "version":
-                    _stage = "eventType";
+                    _stage = "eventSchema";
                     _btnNext.SetFocus();
 
                     _selectedVersionIdx = _lvDetails.SelectedItem;
@@ -420,40 +450,57 @@ namespace EventGenerator.Modules
                     if (versions.Count > 0)
                         _selectedVersion = versions[_selectedVersionIdx];
 
+                    _lblTitle.Text = "Select an event schema:";
+                    var eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    await _lvDetails.SetSourceAsync((IList)eventSchemas);
+
+                    _btnNext.Enabled = (eventSchemas.Count > 0) ? true : false;
+
+                    break;
+                case "eventSchema":
+                    _stage = "eventType";
+                    _btnNext.SetFocus();
+
+                    _selectedEventSchemaIdx = _lvDetails.SelectedItem;
+
+                    eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    if (eventSchemas.Count > 0)
+                        _selectedEventSchema = eventSchemas[_selectedEventSchemaIdx];
+
                     _lblTitle.Text = "Select an event type:";
-                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
 
                     _btnNext.Enabled = (eventTypes.Count > 0) ? true : false;
 
                     break;
-
                 case "eventType":
                     _stage = "review";
                     _selectedEventTypeIdx = _lvDetails.SelectedItem;
 
-                    eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     _selectedEventType = eventTypes[_selectedEventTypeIdx];
 
                     _btnNext.Text = "_Generate";
                     _lblTitle.Text = "> Review your generation request <";
                     _lvDetails.Visible = false;
-                    _lblSystemSource.Visible = true;
-                    _lblSystemSourceVersionType.Visible = true;
-                    _lblSystemSourceVersion.Visible = true;
-                    _lblSystemSourceEventType.Visible = true;
+                    _lblSelectedSourceName.Visible = true;
+                    _lblSelectedVersionType.Visible = true;
+                    _lblSelectedVersion.Visible = true;
+                    _lblSelectedEventSchema.Visible = true;
+                    _lblSelectedEventType.Visible = true;
                     _lblNumberOfEvents.Visible = true;
                     _txtNumberOfEvents.Visible = true;
-                    _lblSystemSource.Text = $"- System source: {_selectedSourceName}";
-                    _lblSystemSourceVersionType.Text = $"- Version type: {_selectedVersionType}";
-                    _lblSystemSourceVersion.Text = $"- Version: {_selectedVersion}";
-                    _lblSystemSourceEventType.Text = $"- Event type: {_selectedEventType}";
+                    _lblSelectedSourceName.Text = $"- System source: {_selectedSourceName}";
+                    _lblSelectedVersionType.Text = $"- Version type: {_selectedVersionType}";
+                    _lblSelectedVersion.Text = $"- Version: {_selectedVersion}";
+                    _lblSelectedEventSchema.Text = $"- Event schema: {_selectedEventSchema}";
+                    _lblSelectedEventType.Text = $"- Event type: {_selectedEventType}";
 
                     _txtNumberOfEvents.SetFocus();
 
                     break;
             }
-
         }
 
         #endregion

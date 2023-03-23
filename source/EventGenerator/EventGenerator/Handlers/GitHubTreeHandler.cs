@@ -10,12 +10,54 @@ namespace EventGenerator.Handlers
         {
         }
 
+        public static async Task<string> GetMainRepositoryTreeSha()
+        {
+            string result = string.Empty;
+            HttpClient httpClient = new();
+            httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
+            var contentsUrl = $"https://api.github.com/repos/robece/event-generator-specs/contents?ref=main";
+            
+            try
+            {
+                var httpResponseMessage = await httpClient.GetAsync(contentsUrl);
+                httpResponseMessage.EnsureSuccessStatusCode();
+
+                var contents = await httpResponseMessage.Content.ReadFromJsonAsync<JsonArray>();
+
+                if (contents is not null)
+                {
+                    foreach (var record in contents.AsArray())
+                    {
+                        var name = record?["name"]?.ToString();
+                        
+                        if (name is not null)
+                            if (name == "data-plane")
+                            {
+                                var sha = record?["sha"]?.ToString();
+                                if (sha is not null)
+                                {
+                                    result = sha;
+                                    break;
+                                }
+                            }
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return result;
+        }
+
         public static async Task<Dictionary<string, string>> GetRepositoryTree(bool recursive = true)
         {
             Dictionary<string, string> result = new();
             HttpClient httpClient = new();
             httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("EventGenerator", "1"));
-            var contentsUrl = $"https://api.github.com/repos/robece/event-generator/git/trees/12c913f7094ab128194de0ff81c36b6a4c968ca3?recursive={recursive}";
+            var sha = await GetMainRepositoryTreeSha();
+            var contentsUrl = $"https://api.github.com/repos/robece/event-generator-specs/git/trees/{sha}?recursive={recursive}";
 
             try
             {
@@ -33,7 +75,6 @@ namespace EventGenerator.Handlers
                         if (type is not null && path is not null)
                             result.Add(path, type);
                     }
-
                 }
             }
             catch (Exception ex)
