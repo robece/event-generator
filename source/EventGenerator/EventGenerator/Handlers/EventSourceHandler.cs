@@ -76,7 +76,7 @@
             string path = $"{sourceName}/{versionType}/{version}/examples/{eventSchema}/ai/";
             int level = 7;
             result = GetList(repositoryTree, path, level, "blob");
-            result.ForEach((s) => { s.Replace(".prompt", ""); });
+            result = result.Select(s => s.Replace(".prompt", "")).ToList();
             return result;
         }
 
