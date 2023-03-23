@@ -1,16 +1,14 @@
-﻿using System;
-using System.Net.Http.Headers;
-using System.Xml.Linq;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 
 namespace EventGenerator.Handlers
 {
-	public class GitHubTreeHandler
-	{
-		public GitHubTreeHandler()
-		{
-		}
+    public class GitHubTreeHandler
+    {
+        public GitHubTreeHandler()
+        {
+        }
 
         public static async Task<Dictionary<string, string>> GetRepositoryTree(bool recursive = true)
         {

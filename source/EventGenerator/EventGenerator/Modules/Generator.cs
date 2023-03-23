@@ -1,7 +1,6 @@
-﻿using System;
+﻿using EventGenerator.Handlers;
 using System.Collections;
 using System.Text.RegularExpressions;
-using EventGenerator.Handlers;
 using Terminal.Gui;
 
 namespace EventGenerator.Modules
@@ -20,7 +19,7 @@ namespace EventGenerator.Modules
         private int _selectedVersionIdx = -1;
         private string _selectedEventType = string.Empty;
         private int _selectedEventTypeIdx = -1;
-        
+
         #endregion
 
         #region private controls
@@ -45,7 +44,7 @@ namespace EventGenerator.Modules
 
         public Generator()
         {
-            
+
         }
 
         #endregion
@@ -124,7 +123,7 @@ namespace EventGenerator.Modules
                 Y = Pos.Bottom(_lblTitle) + 1,
                 TextAlignment = TextAlignment.Left,
                 Width = 25,
-                Height = 1,               
+                Height = 1,
                 Visible = false
             };
             _dialog.Add(_lblSystemSource);
@@ -184,17 +183,17 @@ namespace EventGenerator.Modules
             };
             _dialog.Add(_txtNumberOfEvents);
 
-            _txtNumberOfEvents.TextChanged +=  (e) => 
+            _txtNumberOfEvents.TextChanged += (e) =>
             {
                 var strTextToReplace = _txtNumberOfEvents.Text.ToString();
                 if (string.IsNullOrEmpty(strTextToReplace))
                     return;
 
-                if (Regex.IsMatch (strTextToReplace, "[^0-9]+"))
+                if (Regex.IsMatch(strTextToReplace, "[^0-9]+"))
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
-                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+                    _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
                     MessageBox.Query("Error", "Input value is not a number", "Ok");
 
@@ -205,7 +204,7 @@ namespace EventGenerator.Modules
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
-                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+                    _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
                     MessageBox.Query("Error", "Max length reached", "Ok");
 
@@ -217,7 +216,7 @@ namespace EventGenerator.Modules
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
-                    _txtNumberOfEvents.CursorPosition = Math.Min (cp, _txtNumberOfEvents.Text.RuneCount);
+                    _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
                     MessageBox.Query("Error", "Max value reached", "Ok");
 
@@ -407,7 +406,7 @@ namespace EventGenerator.Modules
                     _lblTitle.Text = "Select a version:";
                     var versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     await _lvDetails.SetSourceAsync((IList)versions);
-                    
+
                     _btnNext.Enabled = (versions.Count > 0) ? true : false;
 
                     break;
