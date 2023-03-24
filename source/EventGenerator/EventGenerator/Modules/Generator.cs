@@ -523,6 +523,10 @@ namespace EventGenerator.Modules
                     int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());     
                     var result = await EventGeneratorApiHandler.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
                     Application.RequestStop();
+                    
+                    if (_dialog == null)
+                        return;
+
                     _dialog.RequestStop();
                     Editor._textView.Text = result;
                 });
