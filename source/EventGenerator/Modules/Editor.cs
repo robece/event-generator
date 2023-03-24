@@ -90,6 +90,7 @@ namespace EventGenerator.Modules
             _editorWindow.Add(_textView);
 
             var generator = new Generator();
+            var publisher = new Publisher();
 
             var menu = new MenuBar(new MenuBarItem[] {
                 new MenuBarItem ("_File", new MenuItem []
@@ -118,12 +119,12 @@ namespace EventGenerator.Modules
                 }),
                 new MenuBarItem("_Generate", new MenuItem []
                 {
-                    new MenuItem ("_System events", "", async () => await generator.DisplayDialogAsync())                    
+                    new MenuItem ("_System events", "", async () => await generator.DisplayDialogAsync())
                 }),
                  new MenuBarItem("_Publish", new MenuItem []
                 {
-                    new MenuItem ("Publish To Azure _Event Grid", "", () => new NotImplementedException()),
-                    new MenuItem ("Publish To _Webhook", "", () => new NotImplementedException())
+                    new MenuItem ("Publish To Azure _Event Grid Topic", "", () => new NotImplementedException()),
+                    new MenuItem ("Publish To Azure _Function", "", () => publisher.DisplayDialog("function"))
                 }),
                 // new MenuBarItem ("Forma_t", new MenuItem [] {
                 //     CreateWrapChecked()

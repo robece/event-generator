@@ -10,11 +10,6 @@ namespace EventGenerator
 
         static void Main(string[] args)
         {
-            if (OperatingSystem.IsWindows())
-            {
-                Console.SetWindowSize(200, 50);
-            }
-
             Application.Init();
 
             var editor = new Editor();

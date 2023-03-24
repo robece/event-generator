@@ -48,7 +48,6 @@ namespace EventGenerator.Modules
 
         public Generator()
         {
-
         }
 
         #endregion
@@ -74,20 +73,20 @@ namespace EventGenerator.Modules
             _btnCancel = new Button("_Cancel", false);
             _btnCancel.Visible = true;
             _btnCancel.TextAlignment = TextAlignment.Centered;
-            _btnCancel.Clicked += BtnCancel_Clicked;
+            _btnCancel.Clicked += _btnCancel_Clicked;
             buttons.Add(_btnCancel);
 
-            _btnBack = new Button("_Back", true);
+            _btnBack = new Button("_Back", false);
             _btnCancel.Visible = true;
             _btnBack.Enabled = false;
             _btnBack.TextAlignment = TextAlignment.Centered;
-            _btnBack.Clicked += BtnBack_Clicked;
+            _btnBack.Clicked += _btnBack_Clicked;
             buttons.Add(_btnBack);
 
             _btnNext = new Button("_Next", true);
             _btnNext.Visible = true;
             _btnNext.TextAlignment = TextAlignment.Centered;
-            _btnNext.Clicked += BtnNext_Clicked;
+            _btnNext.Clicked += _btnNext_Clicked;
             buttons.Add(_btnNext);
 
             _dialog = new Dialog("Generate system source events", buttons.ToArray());
@@ -201,11 +200,11 @@ namespace EventGenerator.Modules
 
             _txtNumberOfEvents.TextChanged += (e) =>
             {
-                var strTextToReplace = _txtNumberOfEvents.Text.ToString();
-                if (string.IsNullOrEmpty(strTextToReplace))
+                var strNumberOfEvents = _txtNumberOfEvents.Text.ToString();
+                if (string.IsNullOrEmpty(strNumberOfEvents))
                     return;
 
-                if (Regex.IsMatch(strTextToReplace, "[^0-9]+"))
+                if (Regex.IsMatch(strNumberOfEvents, "[^0-9]+"))
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
@@ -263,7 +262,8 @@ namespace EventGenerator.Modules
             };
 
             _lvDetails.DrawContent += LvDetails_DrawContent;
-            _dialog.Loaded += Dialog_Loaded;
+
+            _btnNext.SetFocus();
 
             Application.Run(_dialog);
         }
@@ -280,15 +280,13 @@ namespace EventGenerator.Modules
             _scrollBarView.Refresh();
         }
 
-        private void Dialog_Loaded()
+        private void _btnCancel_Clicked()
         {
-            if (_btnNext == null)
-                return;
-
-            _btnNext.SetFocus();
+            Reset();
+            Application.RequestStop();
         }
 
-        private void BtnCancel_Clicked()
+        private void Reset()
         {
             _stage = "sourceName";
             _selectedSourceName = string.Empty;
@@ -302,10 +300,15 @@ namespace EventGenerator.Modules
             _selectedEventType = string.Empty;
             _selectedEventTypeIdx = -1;
 
-            Application.RequestStop();
+            _lblSelectedSourceName = null;
+            _lblSelectedVersionType = null;
+            _lblSelectedVersion = null;
+            _lblSelectedEventSchema = null;
+            _lblSelectedEventType = null;
+            _txtNumberOfEvents = null;
         }
 
-        private async void BtnBack_Clicked()
+        private async void _btnBack_Clicked()
         {
             if (_btnBack == null || _btnNext == null ||
                 _lblTitle == null || _lvDetails == null ||
@@ -395,7 +398,7 @@ namespace EventGenerator.Modules
             }
         }
 
-        private async void BtnNext_Clicked()
+        private async void _btnNext_Clicked()
         {
             if (_btnBack == null || _btnNext == null ||
             _lblTitle == null || _lvDetails == null ||
@@ -531,6 +534,7 @@ namespace EventGenerator.Modules
 
                     _dialog.RequestStop();
                     Editor._textView.Text = result;
+                    Reset();
                 });
             }
             return _dialogBgProc == null;
