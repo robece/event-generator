@@ -21,7 +21,7 @@ namespace EventGenerator.Modules
         private Window? _editorWindow = null;
         private ScrollBarView? _scrollBarView = null;
         private Window? _findReplaceWindow = null;
-        private TextView? _textView = null;
+        public static TextView? _textView = null;
 
         #endregion
 

@@ -27,6 +27,7 @@ namespace EventGenerator.Modules
         #region private controls
 
         private Dialog? _dialog = null;
+        private Dialog? _dialogBgProc = null;
         private Button? _btnCancel = null;
         private Button? _btnBack = null;
         private Button? _btnNext = null;
@@ -56,7 +57,7 @@ namespace EventGenerator.Modules
 
         public async Task DisplayDialogAsync()
         {
-            var dictRepositoryTree = await GitHubTreeHandler.GetRepositoryTree();
+            var dictRepositoryTree = await GitHubTreeHandler.GetRepositoryTreeAsync();
             _repositoryTree = dictRepositoryTree.ToList<KeyValuePair<string, string>>();
 
             await CreateDialogAsync();
@@ -175,7 +176,7 @@ namespace EventGenerator.Modules
             };
             _dialog.Add(_lblSelectedEventType);
 
-            _lblNumberOfEvents = new Label("Number of events (Up to 10 events):")
+            _lblNumberOfEvents = new Label("Number of events (Up to 2 events):")
             {
                 X = 1,
                 Y = Pos.Bottom(_lblSelectedEventType) + 1,
@@ -193,7 +194,8 @@ namespace EventGenerator.Modules
                 TextAlignment = TextAlignment.Left,
                 Width = 10,
                 Height = 1,
-                Visible = false
+                Visible = false,
+                Text = "2"
             };
             _dialog.Add(_txtNumberOfEvents);
 
@@ -226,7 +228,7 @@ namespace EventGenerator.Modules
                 }
 
                 int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
-                if (numberOfEvents > 10)
+                if (numberOfEvents > 2)
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
@@ -476,6 +478,7 @@ namespace EventGenerator.Modules
                     break;
                 case "eventType":
                     _stage = "review";
+                    _btnNext.SetFocus();
                     _selectedEventTypeIdx = _lvDetails.SelectedItem;
 
                     eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
@@ -497,10 +500,61 @@ namespace EventGenerator.Modules
                     _lblSelectedEventSchema.Text = $"- Event schema: {_selectedEventSchema}";
                     _lblSelectedEventType.Text = $"- Event type: {_selectedEventType}";
 
-                    _txtNumberOfEvents.SetFocus();
+                    break;
+                case "review":
+
+                    if (string.IsNullOrEmpty((string?)_txtNumberOfEvents.Text))
+                        return;
+                    
+                    Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(100), PrepareBackgroundProcess);
+                    StartBackgroundProcessDialog();
 
                     break;
             }
+        }
+
+        bool PrepareBackgroundProcess (MainLoop _)
+        {
+            if (_dialogBgProc != null) {
+                Application.MainLoop.Invoke (async () => {
+                    if (_txtNumberOfEvents == null || Editor._textView == null)
+                        return;
+                    
+                    int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());     
+                    var result = await EventGeneratorApiHandler.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
+                    Application.RequestStop();
+                    _dialog.RequestStop();
+                    Editor._textView.Text = result;
+                });
+            }
+            return _dialogBgProc == null;
+        }
+
+        private void StartBackgroundProcessDialog ()
+        {
+            _dialogBgProc = new Dialog ("Notification");
+            
+            var _lblTitle = new Label("Please wait. Your request is being processing...")
+            {
+                X = 1,
+                Y = 1,
+                TextAlignment = TextAlignment.Left,
+                AutoSize = true,
+                Visible = true
+            };
+            _dialogBgProc.Add(_lblTitle);
+
+            var _lblSubtitle = new Label("This window will disappear once the request is completed.")
+            {
+                X = 1,
+                Y = Pos.Bottom(_lblTitle),
+                TextAlignment = TextAlignment.Left,
+                AutoSize = true,
+                Visible = true
+            };
+            _dialogBgProc.Add(_lblSubtitle);
+
+            Application.Run(_dialogBgProc);
         }
 
         #endregion
