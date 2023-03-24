@@ -86,12 +86,14 @@
 
             try
             {
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
+                var filteredTree = repositoryTree.FindAll(x => x.Key.StartsWith(path));
+
+                foreach (KeyValuePair<string, string> kv in filteredTree)
                 {
                     kv.Key.Replace(path, "");
                 }
 
-                foreach (KeyValuePair<string, string> kv in repositoryTree)
+                foreach (KeyValuePair<string, string> kv in filteredTree)
                 {
                     string[] words = kv.Key.Split('/');
                     if (words.Length == level)

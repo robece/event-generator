@@ -116,10 +116,14 @@ namespace EventGenerator.Modules
                     null,
                     new MenuItem ("_Select All", "", () => SelectAll())
                 }),
-                new MenuBarItem("E_vents", new MenuItem []
+                new MenuBarItem("_Generate", new MenuItem []
                 {
-                    new MenuItem ("_Generate system source events", "", async () => await generator.DisplayDialogAsync()),
-                    new MenuItem ("_Send events to Azure Event Grid", "", () => new NotImplementedException()),
+                    new MenuItem ("_System events", "", async () => await generator.DisplayDialogAsync())                    
+                }),
+                 new MenuBarItem("_Publish", new MenuItem []
+                {
+                    new MenuItem ("Publish To Azure _Event Grid", "", () => new NotImplementedException()),
+                    new MenuItem ("Publish To _Webhook", "", () => new NotImplementedException())
                 }),
                 // new MenuBarItem ("Forma_t", new MenuItem [] {
                 //     CreateWrapChecked()

@@ -12,7 +12,7 @@ namespace EventGenerator
         {
             if (OperatingSystem.IsWindows())
             {
-                Console.SetWindowSize(160, 80);
+                Console.SetWindowSize(200, 50);
             }
 
             Application.Init();

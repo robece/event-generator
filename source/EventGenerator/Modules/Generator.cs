@@ -478,7 +478,6 @@ namespace EventGenerator.Modules
                     break;
                 case "eventType":
                     _stage = "review";
-                    _btnNext.SetFocus();
                     _selectedEventTypeIdx = _lvDetails.SelectedItem;
 
                     eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
@@ -499,13 +498,14 @@ namespace EventGenerator.Modules
                     _lblSelectedVersion.Text = $"- Version: {_selectedVersion}";
                     _lblSelectedEventSchema.Text = $"- Event schema: {_selectedEventSchema}";
                     _lblSelectedEventType.Text = $"- Event type: {_selectedEventType}";
+                    _btnNext.SetFocus();
 
                     break;
                 case "review":
 
                     if (string.IsNullOrEmpty((string?)_txtNumberOfEvents.Text))
                         return;
-                    
+
                     Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(100), PrepareBackgroundProcess);
                     StartBackgroundProcessDialog();
 
@@ -513,17 +513,19 @@ namespace EventGenerator.Modules
             }
         }
 
-        bool PrepareBackgroundProcess (MainLoop _)
+        bool PrepareBackgroundProcess(MainLoop _)
         {
-            if (_dialogBgProc != null) {
-                Application.MainLoop.Invoke (async () => {
+            if (_dialogBgProc != null)
+            {
+                Application.MainLoop.Invoke(async () =>
+                {
                     if (_txtNumberOfEvents == null || Editor._textView == null)
                         return;
-                    
-                    int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());     
+
+                    int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
                     var result = await EventGeneratorApiHandler.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
                     Application.RequestStop();
-                    
+
                     if (_dialog == null)
                         return;
 
@@ -534,11 +536,11 @@ namespace EventGenerator.Modules
             return _dialogBgProc == null;
         }
 
-        private void StartBackgroundProcessDialog ()
+        private void StartBackgroundProcessDialog()
         {
-            _dialogBgProc = new Dialog ("Notification");
-            
-            var _lblTitle = new Label("Please wait. Your request is being processing...")
+            _dialogBgProc = new Dialog("Notification");
+
+            var _lblTitle = new Label("Please wait. Your request has been successfully submitted and is being processed.")
             {
                 X = 1,
                 Y = 1,
