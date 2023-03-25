@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using EventGenerator.Common;
+using EventGenerator.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Dynamic;
 using System.Text;
@@ -7,7 +9,7 @@ using Terminal.Gui;
 
 namespace EventGenerator.Modules
 {
-    public class Publisher
+    internal class Publisher
     {
         #region private members
 
@@ -20,9 +22,10 @@ namespace EventGenerator.Modules
         private Button? _btnCancel = null;
         private Button? _btnPublish = null;
         private Label? _lblEndpoint = null;
-        private TextField? _txtEndpoint = null;
+        private TextField? _txtAzureFunctionEndpoint = null;
+        private CheckBox? _chkRememberAzureFunctionEndpoint = null;
         private Label? _lblDelayMs = null;
-        private TextField? _txtDelayMs = null;
+        private TextField? _txtAzureFunctionDelayMs = null;
 
         #endregion
 
@@ -52,13 +55,13 @@ namespace EventGenerator.Modules
             _btnCancel = new Button("_Cancel", false);
             _btnCancel.Visible = true;
             _btnCancel.TextAlignment = TextAlignment.Centered;
-            _btnCancel.Clicked += _btnCancel_Clicked; ;
+            _btnCancel.Clicked += _btnCancel_Clicked;
             buttons.Add(_btnCancel);
 
             _btnPublish = new Button("_Publish", true);
             _btnPublish.Visible = true;
             _btnPublish.TextAlignment = TextAlignment.Centered;
-            _btnPublish.Clicked += _btnPublish_Clicked; ;
+            _btnPublish.Clicked += _btnPublish_Clicked;
             buttons.Add(_btnPublish);
 
             _dialog = new Dialog(string.Empty, buttons.ToArray());
@@ -79,21 +82,32 @@ namespace EventGenerator.Modules
                     };
                     _dialog.Add(_lblEndpoint);
 
-                    _txtEndpoint = new TextField("")
+                    _txtAzureFunctionEndpoint = new TextField("")
                     {
                         X = 1,
                         Y = Pos.Bottom(_lblEndpoint) + 1,
+                        TextAlignment = TextAlignment.Left,
+                        Width = 80,
+                        Height = 1,
+                        Visible = true
+                    };
+                    _dialog.Add(_txtAzureFunctionEndpoint);
+
+                    _chkRememberAzureFunctionEndpoint = new CheckBox("Remember this endpoint", false)
+                    {
+                        X = 1,
+                        Y = Pos.Bottom(_txtAzureFunctionEndpoint) + 1,
                         TextAlignment = TextAlignment.Left,
                         Width = 50,
                         Height = 1,
                         Visible = true
                     };
-                    _dialog.Add(_txtEndpoint);
+                    _dialog.Add(_chkRememberAzureFunctionEndpoint);
 
-                    _lblDelayMs = new Label("Delay between events (in milliseconds):")
+                    _lblDelayMs = new Label("Delay between events (in milliseconds, 60000 ms max.):")
                     {
                         X = 1,
-                        Y = Pos.Bottom(_txtEndpoint) + 1,
+                        Y = Pos.Bottom(_chkRememberAzureFunctionEndpoint) + 1,
                         TextAlignment = TextAlignment.Left,
                         Width = 15,
                         Height = 1,
@@ -101,53 +115,53 @@ namespace EventGenerator.Modules
                     };
                     _dialog.Add(_lblDelayMs);
 
-                    _txtDelayMs = new TextField("")
+                    _txtAzureFunctionDelayMs = new TextField("")
                     {
                         X = 1,
                         Y = Pos.Bottom(_lblDelayMs) + 1,
                         TextAlignment = TextAlignment.Left,
-                        Width = 5,
+                        Width = 10,
                         Height = 1,
                         Visible = true,
                         Text = "50",
 
                     };
-                    _dialog.Add(_txtDelayMs);
+                    _dialog.Add(_txtAzureFunctionDelayMs);
 
-                    _txtDelayMs.TextChanged += (e) =>
+                    _txtAzureFunctionDelayMs.TextChanged += (e) =>
                     {
-                        var strDelayMs = _txtDelayMs.Text.ToString();
+                        var strDelayMs = _txtAzureFunctionDelayMs.Text.ToString();
                         if (string.IsNullOrEmpty(strDelayMs))
                             return;
 
                         if (Regex.IsMatch(strDelayMs, "[^0-9]+"))
                         {
-                            var cp = _txtDelayMs.CursorPosition;
-                            _txtDelayMs.Text = e;
-                            _txtDelayMs.CursorPosition = Math.Min(cp, _txtDelayMs.Text.RuneCount);
+                            var cp = _txtAzureFunctionDelayMs.CursorPosition;
+                            _txtAzureFunctionDelayMs.Text = e;
+                            _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
                             MessageBox.Query("Error", "Input value is not a number", "Ok");
 
                             return;
                         }
 
-                        if (_txtDelayMs.Text.Length > 5)
+                        if (_txtAzureFunctionDelayMs.Text.Length > 5)
                         {
-                            var cp = _txtDelayMs.CursorPosition;
-                            _txtDelayMs.Text = e;
-                            _txtDelayMs.CursorPosition = Math.Min(cp, _txtDelayMs.Text.RuneCount);
+                            var cp = _txtAzureFunctionDelayMs.CursorPosition;
+                            _txtAzureFunctionDelayMs.Text = e;
+                            _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
                             MessageBox.Query("Error", "Max length reached", "Ok");
 
                             return;
                         }
 
-                        int delayMs = Convert.ToInt16(_txtDelayMs.Text.ToString());
-                        if (delayMs > 99999)
+                        int delayMs = Convert.ToInt32(_txtAzureFunctionDelayMs.Text.ToString());
+                        if (delayMs > 60000)
                         {
-                            var cp = _txtDelayMs.CursorPosition;
-                            _txtDelayMs.Text = e;
-                            _txtDelayMs.CursorPosition = Math.Min(cp, _txtDelayMs.Text.RuneCount);
+                            var cp = _txtAzureFunctionDelayMs.CursorPosition;
+                            _txtAzureFunctionDelayMs.Text = e;
+                            _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
                             MessageBox.Query("Error", "Max value reached", "Ok");
 
@@ -155,10 +169,25 @@ namespace EventGenerator.Modules
                         }
                     };
 
-                    _txtEndpoint.SetFocus();
+                    _txtAzureFunctionEndpoint.SetFocus();
 
                     break;
             }
+
+            var settings = Common.Utils.GetSettings();
+
+            if (settings == null)
+                return;
+
+            if (_txtAzureFunctionEndpoint == null)
+                return;
+
+            _txtAzureFunctionEndpoint.Text = (string.IsNullOrEmpty(settings.AzureFunctionEndpoint)) ? string.Empty : settings.AzureFunctionEndpoint;
+
+            if (_chkRememberAzureFunctionEndpoint == null)
+                return;
+
+            _chkRememberAzureFunctionEndpoint.Checked = settings.RememberAzureFunctionEndpoint;
 
             Application.Run(_dialog);
         }
@@ -170,6 +199,37 @@ namespace EventGenerator.Modules
 
         private void _btnPublish_Clicked()
         {
+            if (_chkRememberAzureFunctionEndpoint == null)
+                return;
+
+            var endpoint = string.Empty;
+            if (_txtAzureFunctionEndpoint != null)
+                if (!string.IsNullOrEmpty(_txtAzureFunctionEndpoint.Text.ToString()))
+                    endpoint = _txtAzureFunctionEndpoint.Text.ToString();
+
+            if (string.IsNullOrEmpty(endpoint))
+                return;
+
+            if (_chkRememberAzureFunctionEndpoint.Checked)
+            {
+                var settings = Utils.GetSettings();
+
+                if (settings == null)
+                {
+                    MessageBox.ErrorQuery("Error", $"There was an error reading the settings file.", "Ok");
+                    return;
+                }
+
+                settings.AzureFunctionEndpoint = endpoint;
+                settings.RememberAzureFunctionEndpoint = true;
+                Utils.UpdateSettings(settings);
+            }
+            else
+            {
+                var settings = new Settings() { AzureFunctionEndpoint = string.Empty, RememberAzureFunctionEndpoint = false };
+                Utils.UpdateSettings(settings);
+            }
+
             Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(100), PrepareBackgroundProcess);
             StartBackgroundProcessDialog();
         }
@@ -178,29 +238,40 @@ namespace EventGenerator.Modules
         {
             if (_dialogBgProc != null)
             {
-                Application.MainLoop.Invoke(async () =>
+                var endpoint = string.Empty;
+                if (_txtAzureFunctionEndpoint != null)
+                    if (!string.IsNullOrEmpty(_txtAzureFunctionEndpoint.Text.ToString()))
+                        endpoint = _txtAzureFunctionEndpoint.Text.ToString();
+
+                if (string.IsNullOrEmpty(endpoint))
+                {
+                    Application.RequestStop();
+                    MessageBox.ErrorQuery("Error", "There is no endpoint registered.", "Ok");
+                    return false;
+                }
+
+                var delayMs = 0;
+                if (_txtAzureFunctionDelayMs != null)
+                    Convert.ToInt32(_txtAzureFunctionDelayMs.Text.ToString());
+
+                var content = string.Empty;
+                if (Editor._textView != null)
+                    if (!string.IsNullOrEmpty(Editor._textView.Text.ToString()))
+                        content = Editor._textView.Text.ToString();
+
+                if (string.IsNullOrEmpty(content))
+                {
+                    Application.RequestStop();
+                    MessageBox.ErrorQuery("Error", "There are no events in the editor.", "Ok");
+                    return false;
+                }
+
+                StringBuilder sb = new StringBuilder();
+
+                Application.MainLoop.Invoke(() =>
                 {
                     try
                     {
-                        if (_txtDelayMs == null)
-                            return;
-
-                        var delayMs = Convert.ToInt16(_txtDelayMs.Text.ToString());
-
-                        if (_txtEndpoint == null)
-                            return;
-
-                        var endpoint = _txtEndpoint.Text.ToString();
-
-                        if (Editor._textView == null)
-                            return;
-
-                        var content = Editor._textView.Text.ToString();
-
-                        if (string.IsNullOrEmpty(content))
-                            return;
-
-                        var httpClient = new HttpClient();
                         var token = JToken.Parse(content);
 
                         if (token is JArray)
@@ -210,32 +281,45 @@ namespace EventGenerator.Modules
                                 if (events.Count > 0)
                                     foreach (dynamic e in events)
                                     {
-                                        await Task.Delay(delayMs).ContinueWith(async (t) =>
-                                        {
-                                            var httpClient = new HttpClient();
-                                            string json = JsonConvert.SerializeObject(e, Formatting.Indented);
-                                            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
-                                            httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-                                            var httpResponseMessage = await httpClient.PostAsync(endpoint, requestContent);
-                                            httpResponseMessage.EnsureSuccessStatusCode();
-
-                                            var res = await httpResponseMessage.Content.ReadAsStringAsync();
-                                            httpClient = null;
-                                        });
+                                        string json = JsonConvert.SerializeObject(e, Formatting.Indented);
+                                        var res = SendEvent(endpoint, json);
+                                        sb.Append(res.ToString());
+                                        Thread.Sleep(delayMs);
                                     }
-                        }
-                        else if (token is JObject)
-                        {
+                                else if (token is JObject)
+                                {
+                                    string json = JsonConvert.SerializeObject(token, Formatting.Indented);
+                                    var res = SendEvent(endpoint, json);
+                                    sb.Append(res.ToString());
+                                }
 
+                            Application.RequestStop();
                         }
                     }
                     catch (System.Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        sb.Append(ex.ToString());
                     }
-                    Application.RequestStop();
+
+                    if (sb.Length > 0)
+                    {
+                        var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                        var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
+                        try
+                        {
+                            MessageBox.ErrorQuery("Error", $"There were some exceptions during the publication, check the log file for more details: {filePath}.", "Ok");
+                            Directory.CreateDirectory(directoryPath);
+                            File.WriteAllText(filePath, sb.ToString());
+                        }
+                        catch
+                        {
+                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}.", "Ok");
+                        }
+                        Application.RequestStop();
+                    }
                 });
             }
+
             return _dialogBgProc == null;
         }
 
@@ -243,7 +327,7 @@ namespace EventGenerator.Modules
         {
             _dialogBgProc = new Dialog("Notification");
 
-            var _lblTitle = new Label("Please wait. Your request has been successfully submitted and is being processed.")
+            var _lblTitle = new Label("Please wait. Sending events.")
             {
                 X = 1,
                 Y = 1,
@@ -264,6 +348,28 @@ namespace EventGenerator.Modules
             _dialogBgProc.Add(_lblSubtitle);
 
             Application.Run(_dialogBgProc);
+        }
+
+        private async Task<StringBuilder> SendEvent(string endpoint, string json)
+        {
+            var httpClient = new HttpClient();
+
+            StringBuilder sb = new StringBuilder();
+            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
+            httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+            var httpResponseMessage = await httpClient.PostAsync(endpoint, requestContent);
+
+            if (!httpResponseMessage.IsSuccessStatusCode)
+            {
+                sb.AppendLine("event error:");
+                sb.AppendLine(json);
+                sb.AppendLine(httpResponseMessage.ReasonPhrase);
+                sb.AppendLine(httpResponseMessage.StatusCode.ToString());
+            }
+
+            httpClient.Dispose();
+
+            return sb;
         }
     }
 

@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 
 namespace EventGenerator.Handlers
 {
-    public class EventGeneratorApiHandler
+    internal class EventGeneratorApiHandler
     {
         public EventGeneratorApiHandler()
         {

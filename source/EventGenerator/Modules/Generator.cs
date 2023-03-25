@@ -5,7 +5,7 @@ using Terminal.Gui;
 
 namespace EventGenerator.Modules
 {
-    public class Generator
+    internal class Generator
     {
         #region private members
 

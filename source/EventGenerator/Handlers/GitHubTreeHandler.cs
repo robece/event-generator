@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace EventGenerator.Handlers
 {
-    public class GitHubTreeHandler
+    internal class GitHubTreeHandler
     {
         public GitHubTreeHandler()
         {

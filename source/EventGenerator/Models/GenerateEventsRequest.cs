@@ -1,12 +1,12 @@
 namespace EventGenerator.Models
 {
-    public class GenerateEventsRequest
+    internal class GenerateEventsRequest
     {
-        public string sourceName { get; set; }
-        public string versionType { get; set; }
-        public string version { get; set; }
-        public string eventType { get; set; }
-        public string eventSchema { get; set; }
-        public int numberOfEvents { get; set; }
+        public string sourceName { get; set; } = string.Empty;
+        public string versionType { get; set; } = string.Empty;
+        public string version { get; set; } = string.Empty;
+        public string eventType { get; set; } = string.Empty;
+        public string eventSchema { get; set; } = string.Empty;
+        public int numberOfEvents { get; set; } = 0;
     }
 }

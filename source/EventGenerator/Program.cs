@@ -1,4 +1,5 @@
-﻿using EventGenerator.Modules;
+﻿using EventGenerator.Common;
+using EventGenerator.Modules;
 using System.Globalization;
 using Terminal.Gui;
 
@@ -14,6 +15,10 @@ namespace EventGenerator
 
             var editor = new Editor();
             editor.DisplayEditorWindow();
+
+            var settings = Utils.GetSettings();
+            if (settings == null)
+                Utils.InitSettings();
 
             Application.Top.Closed += (_) => Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
             Application.Run();

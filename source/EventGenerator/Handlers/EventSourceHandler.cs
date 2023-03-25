@@ -1,6 +1,6 @@
 ﻿namespace EventGenerator.Handlers
 {
-    public class EventSourceHandler
+    internal class EventSourceHandler
     {
         public EventSourceHandler()
         {

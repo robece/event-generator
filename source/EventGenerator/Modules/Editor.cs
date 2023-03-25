@@ -2,7 +2,7 @@
 
 namespace EventGenerator.Modules
 {
-    public class Editor
+    internal class Editor
     {
         #region private members
 
