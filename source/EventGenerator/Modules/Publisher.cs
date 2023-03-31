@@ -283,14 +283,14 @@ namespace EventGenerator.Modules
                                     {
                                         string json = JsonConvert.SerializeObject(e, Formatting.Indented);
                                         var res = SendEvent(endpoint, json);
-                                        sb.Append(res.ToString());
+                                        //sb.Append(res.ToString());
                                         Thread.Sleep(delayMs);
                                     }
                                 else if (token is JObject)
                                 {
                                     string json = JsonConvert.SerializeObject(token, Formatting.Indented);
                                     var res = SendEvent(endpoint, json);
-                                    sb.Append(res.ToString());
+                                    //sb.Append(res.ToString());
                                 }
 
                             Application.RequestStop();

@@ -175,7 +175,7 @@ namespace EventGenerator.Modules
             };
             _dialog.Add(_lblSelectedEventType);
 
-            _lblNumberOfEvents = new Label("Number of events (Up to 2 events):")
+            _lblNumberOfEvents = new Label("Number of events (Up to 500 events):")
             {
                 X = 1,
                 Y = Pos.Bottom(_lblSelectedEventType) + 1,
@@ -194,7 +194,7 @@ namespace EventGenerator.Modules
                 Width = 10,
                 Height = 1,
                 Visible = false,
-                Text = "2"
+                Text = "10"
             };
             _dialog.Add(_txtNumberOfEvents);
 
@@ -215,7 +215,7 @@ namespace EventGenerator.Modules
                     return;
                 }
 
-                if (_txtNumberOfEvents.Text.Length > 2)
+                if (_txtNumberOfEvents.Text.Length > 3)
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;
@@ -227,7 +227,7 @@ namespace EventGenerator.Modules
                 }
 
                 int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
-                if (numberOfEvents > 2)
+                if (numberOfEvents > 500)
                 {
                     var cp = _txtNumberOfEvents.CursorPosition;
                     _txtNumberOfEvents.Text = e;

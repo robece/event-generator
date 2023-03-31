@@ -13,7 +13,7 @@ namespace EventGenerator.Handlers
         {
             string result = string.Empty;
             var httpClient = new HttpClient();
-            var contentsUrl = $"https://func01rob.azurewebsites.net/api/generateevents"; //http://localhost:7071/api/generateevents
+            var contentsUrl = $"http://localhost:7190/api/generatecodeforevents";
 
             try
             {
