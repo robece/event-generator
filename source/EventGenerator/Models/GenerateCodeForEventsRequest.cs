@@ -1,6 +1,6 @@
 namespace EventGenerator.Models
 {
-    internal class GenerateEventsRequest
+    internal class GenerateCodeForEventsRequest
     {
         public string sourceName { get; set; } = string.Empty;
         public string versionType { get; set; } = string.Empty;

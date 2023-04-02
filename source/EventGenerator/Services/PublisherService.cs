@@ -1,5 +1,7 @@
 ﻿using EventGenerator.Common;
 using EventGenerator.Models;
+using EventGenerator.Services.Interfaces;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Dynamic;
@@ -7,11 +9,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Terminal.Gui;
 
-namespace EventGenerator.Modules
+namespace EventGenerator.Services
 {
-    internal class Publisher
+    internal class PublisherService : IPublisherService
     {
         #region private members
+
+        private IHost? _host = null;
+        private readonly IHttpClientFactory? _httpClientFactory = null;
 
         #endregion
 
@@ -31,8 +36,10 @@ namespace EventGenerator.Modules
 
         #region constructor
 
-        public Publisher()
+        public PublisherService(IHost host, IHttpClientFactory httpClientFactory)
         {
+            _host = host;
+            _httpClientFactory = httpClientFactory;
         }
 
         #endregion
@@ -216,7 +223,7 @@ namespace EventGenerator.Modules
 
                 if (settings == null)
                 {
-                    MessageBox.ErrorQuery("Error", $"There was an error reading the settings file.", "Ok");
+                    MessageBox.ErrorQuery("Error", $"There was an error reading the settings file", "Ok");
                     return;
                 }
 
@@ -246,7 +253,7 @@ namespace EventGenerator.Modules
                 if (string.IsNullOrEmpty(endpoint))
                 {
                     Application.RequestStop();
-                    MessageBox.ErrorQuery("Error", "There is no endpoint registered.", "Ok");
+                    MessageBox.ErrorQuery("Error", "There is no endpoint registered", "Ok");
                     return false;
                 }
 
@@ -255,20 +262,20 @@ namespace EventGenerator.Modules
                     Convert.ToInt32(_txtAzureFunctionDelayMs.Text.ToString());
 
                 var content = string.Empty;
-                if (Editor._textView != null)
-                    if (!string.IsNullOrEmpty(Editor._textView.Text.ToString()))
-                        content = Editor._textView.Text.ToString();
+                if (EditorService._textView != null)
+                    if (!string.IsNullOrEmpty(EditorService._textView.Text.ToString()))
+                        content = EditorService._textView.Text.ToString();
 
                 if (string.IsNullOrEmpty(content))
                 {
                     Application.RequestStop();
-                    MessageBox.ErrorQuery("Error", "There are no events in the editor.", "Ok");
+                    MessageBox.ErrorQuery("Error", "There are no events in the editor", "Ok");
                     return false;
                 }
 
                 StringBuilder sb = new StringBuilder();
 
-                Application.MainLoop.Invoke(() =>
+                Application.MainLoop.Invoke(async () =>
                 {
                     try
                     {
@@ -282,15 +289,24 @@ namespace EventGenerator.Modules
                                     foreach (dynamic e in events)
                                     {
                                         string json = JsonConvert.SerializeObject(e, Formatting.Indented);
-                                        var res = SendEvent(endpoint, json);
-                                        //sb.Append(res.ToString());
+                                        var res = await SendEventAsync(endpoint, json);
+
+                                        var hasErrors = res.Item1;
+                                        var errors = res.Item2.ToString();
+                                        if (hasErrors)
+                                            sb.AppendLine(errors);
+                                        
                                         Thread.Sleep(delayMs);
                                     }
                                 else if (token is JObject)
                                 {
                                     string json = JsonConvert.SerializeObject(token, Formatting.Indented);
-                                    var res = SendEvent(endpoint, json);
-                                    //sb.Append(res.ToString());
+                                    var res = await SendEventAsync(endpoint, json);
+
+                                    var hasErrors = res.Item1;
+                                    var errors = res.Item2.ToString();
+                                    if (hasErrors)
+                                        sb.AppendLine(errors);
                                 }
 
                             Application.RequestStop();
@@ -307,13 +323,13 @@ namespace EventGenerator.Modules
                         var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
                         try
                         {
-                            MessageBox.ErrorQuery("Error", $"There were some exceptions during the publication, check the log file for more details: {filePath}.", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There were some exceptions during the publication, check the log file for more details: {filePath}", "Ok");
                             Directory.CreateDirectory(directoryPath);
                             File.WriteAllText(filePath, sb.ToString());
                         }
                         catch
                         {
-                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}.", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
                         }
                         Application.RequestStop();
                     }
@@ -350,26 +366,44 @@ namespace EventGenerator.Modules
             Application.Run(_dialogBgProc);
         }
 
-        private async Task<StringBuilder> SendEvent(string endpoint, string json)
+        private async Task<Tuple<bool, StringBuilder>> SendEventAsync(string endpoint, string jsonRequest)
         {
-            var httpClient = new HttpClient();
-
             StringBuilder sb = new StringBuilder();
-            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
-            httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
-            var httpResponseMessage = await httpClient.PostAsync(endpoint, requestContent);
+            bool hasError = false;
 
-            if (!httpResponseMessage.IsSuccessStatusCode)
+            try
             {
-                sb.AppendLine("event error:");
-                sb.AppendLine(json);
-                sb.AppendLine(httpResponseMessage.ReasonPhrase);
-                sb.AppendLine(httpResponseMessage.StatusCode.ToString());
+                var requestContent = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                if (_httpClientFactory == null)
+                    throw new Exception("Http client initialization error");
+                
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
+                var httpResponseMessage = await httpClient.PostAsync(endpoint, requestContent);
+
+                if (!httpResponseMessage.IsSuccessStatusCode)
+                {
+                    hasError = true;
+                    sb.AppendLine("Exception in http response:");
+                    sb.AppendLine("Request:");
+                    sb.AppendLine(jsonRequest);
+                    sb.AppendLine("Reason Phrase:");
+                    sb.AppendLine(httpResponseMessage.ReasonPhrase);
+                    sb.AppendLine("Status Code:");
+                    sb.AppendLine(httpResponseMessage.StatusCode.ToString());
+                }
             }
-
-            httpClient.Dispose();
-
-            return sb;
+            catch (Exception ex)
+            {
+                hasError = true;
+                sb.AppendLine("Request:");
+                sb.AppendLine(jsonRequest);
+                sb.AppendLine("Exception:");
+                sb.AppendLine(ex.ToString());
+            }
+            
+            return Tuple.Create(hasError,sb);
         }
     }
 

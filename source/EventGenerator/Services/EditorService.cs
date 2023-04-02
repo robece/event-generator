@@ -1,8 +1,11 @@
-﻿using Terminal.Gui;
+﻿using EventGenerator.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Terminal.Gui;
 
-namespace EventGenerator.Modules
+namespace EventGenerator.Services
 {
-    internal class Editor
+    internal class EditorService : IEditorService
     {
         #region private members
 
@@ -13,6 +16,9 @@ namespace EventGenerator.Modules
         private string _textToReplace = string.Empty;
         private bool _matchCase = false;
         private bool _matchWholeWord = false;
+
+        private IHost? _host = null;
+        private readonly IHttpClientFactory? _httpClientFactory = null;
 
         #endregion
 
@@ -27,8 +33,10 @@ namespace EventGenerator.Modules
 
         #region constructor
 
-        public Editor()
+        public EditorService(IHost host, IHttpClientFactory httpClientFactory)
         {
+            _host = host;
+            _httpClientFactory = httpClientFactory;
         }
 
         #endregion
@@ -46,6 +54,9 @@ namespace EventGenerator.Modules
 
         private void CreateEditorWindow()
         {
+            if (_host == null)
+                return;
+
             _editorWindow = new Window(_fileName ?? "Untitled")
             {
                 X = 0,
@@ -89,8 +100,8 @@ namespace EventGenerator.Modules
 
             _editorWindow.Add(_textView);
 
-            var generator = new Generator();
-            var publisher = new Publisher();
+            var generatorService = _host.Services.GetRequiredService<IGeneratorService>();
+            var publisherService = _host.Services.GetRequiredService<IPublisherService>();
 
             var menu = new MenuBar(new MenuBarItem[] {
                 new MenuBarItem ("_File", new MenuItem []
@@ -119,16 +130,12 @@ namespace EventGenerator.Modules
                 }),
                 new MenuBarItem("_Generate", new MenuItem []
                 {
-                    new MenuItem ("_System events", "", async () => await generator.DisplayDialogAsync())
+                    new MenuItem ("_System events", "", async () => await generatorService.DisplayDialogAsync())
                 }),
                  new MenuBarItem("_Publish", new MenuItem []
                 {
-                    new MenuItem ("Publish To Azure _Event Grid Topic", "", () => new NotImplementedException()),
-                    new MenuItem ("Publish To Azure _Function", "", () => publisher.DisplayDialog("function"))
-                }),
-                // new MenuBarItem ("Forma_t", new MenuItem [] {
-                //     CreateWrapChecked()
-                // })
+                    new MenuItem ("Publish To Azure _Function", "", () => publisherService.DisplayDialog("function"))
+                })
             });
             menu.Key = Key.F1;
             Application.Top.Add(menu);
@@ -136,8 +143,8 @@ namespace EventGenerator.Modules
             var statusBar = new StatusBar(new StatusItem[] {
                 siCursorPosition,
                 new StatusItem(Key.F1, "~F1~ Activate Menu", null),
-                new StatusItem(Key.F2, "~F2~ Generate Events", async () => await generator.DisplayDialogAsync()),
-                new StatusItem(Key.F3, "~F3~ Publish Events", () => new NotImplementedException()),
+                new StatusItem(Key.F2, "~F2~ Generate Events", async () => await generatorService.DisplayDialogAsync()),
+                new StatusItem(Key.F3, "~F3~ Publish To Azure _Function", () => publisherService.DisplayDialog("function")),
                 new StatusItem(Key.CtrlMask | Key.Q, "~^Q~ Quit", () => Quit()),
                 new StatusItem(Key.Null, $"OS Clipboard IsSupported : {Clipboard.IsSupported}", null),
                 new StatusItem(Key.Null, $"Version : {Program.Version}", null)

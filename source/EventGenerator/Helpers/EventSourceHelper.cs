@@ -1,8 +1,8 @@
-﻿namespace EventGenerator.Handlers
+﻿namespace EventGenerator.Helpers
 {
-    internal class EventSourceHandler
+    internal class EventSourceHelper
     {
-        public EventSourceHandler()
+        public EventSourceHelper()
         {
         }
 
@@ -107,7 +107,7 @@
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }

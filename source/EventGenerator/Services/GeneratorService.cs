@@ -1,11 +1,14 @@
-﻿using EventGenerator.Handlers;
+﻿using EventGenerator.Helpers;
+using EventGenerator.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using System.Collections;
 using System.Text.RegularExpressions;
 using Terminal.Gui;
 
-namespace EventGenerator.Modules
+namespace EventGenerator.Services
 {
-    internal class Generator
+    internal class GeneratorService :IGeneratorService
     {
         #region private members
 
@@ -21,6 +24,9 @@ namespace EventGenerator.Modules
         private int _selectedEventSchemaIdx = -1;
         private string _selectedEventType = string.Empty;
         private int _selectedEventTypeIdx = -1;
+
+        private IHost? _host = null;
+        private readonly IHttpClientFactory? _httpClientFactory = null;
 
         #endregion
 
@@ -46,8 +52,10 @@ namespace EventGenerator.Modules
 
         #region constructor
 
-        public Generator()
+        public GeneratorService(IHost host, IHttpClientFactory httpClientFactory)
         {
+            _host = host;
+            _httpClientFactory = httpClientFactory;
         }
 
         #endregion
@@ -56,10 +64,33 @@ namespace EventGenerator.Modules
 
         public async Task DisplayDialogAsync()
         {
-            var dictRepositoryTree = await GitHubTreeHandler.GetRepositoryTreeAsync();
-            _repositoryTree = dictRepositoryTree.ToList<KeyValuePair<string, string>>();
+            try
+            {
+                if (_host == null)
+                    return;
 
-            await CreateDialogAsync();
+                var gitHubTreeService = _host.Services.GetRequiredService<IGitHubTreeService>();
+                var dictRepositoryTree = await gitHubTreeService.GetRepositoryTreeAsync();
+                _repositoryTree = dictRepositoryTree.ToList<KeyValuePair<string, string>>();
+
+                await CreateDialogAsync();
+            }
+            catch (Exception ex)
+            {
+                var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
+                try
+                {
+                    MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}", "Ok");
+                    Directory.CreateDirectory(directoryPath);
+                    File.WriteAllText(filePath, ex.ToString());
+                }
+                catch
+                {
+                    MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
+                }
+                Application.RequestStop();
+            }
         }
 
         #endregion
@@ -115,7 +146,7 @@ namespace EventGenerator.Modules
             if (_repositoryTree == null)
                 return;
 
-            var sources = EventSourceHandler.GetSources(_repositoryTree);
+            var sources = EventSourceHelper.GetSources(_repositoryTree);
             await _lvDetails.SetSourceAsync((IList)sources);
 
             _dialog.Add(_lvDetails);
@@ -325,7 +356,7 @@ namespace EventGenerator.Modules
                     _btnNext.SetFocus();
 
                     _lblTitle.Text = "Select a system source:";
-                    var sources = EventSourceHandler.GetSources(_repositoryTree);
+                    var sources = EventSourceHelper.GetSources(_repositoryTree);
                     await _lvDetails.SetSourceAsync((IList)sources);
                     _lvDetails.SelectedItem = _selectedSourceNameIdx;
 
@@ -338,7 +369,7 @@ namespace EventGenerator.Modules
                     _btnBack.SetFocus();
 
                     _lblTitle.Text = "Select a version type:";
-                    var versionTypes = EventSourceHandler.GetVersionTypes(_repositoryTree, _selectedSourceName);
+                    var versionTypes = EventSourceHelper.GetVersionTypes(_repositoryTree, _selectedSourceName);
                     await _lvDetails.SetSourceAsync((IList)versionTypes);
                     _lvDetails.SelectedItem = _selectedVersionTypeIdx;
 
@@ -351,7 +382,7 @@ namespace EventGenerator.Modules
                     _btnBack.SetFocus();
 
                     _lblTitle.Text = "Select a version:";
-                    var versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
+                    var versions = EventSourceHelper.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     await _lvDetails.SetSourceAsync((IList)versions);
                     _lvDetails.SelectedItem = _selectedVersionIdx;
 
@@ -364,7 +395,7 @@ namespace EventGenerator.Modules
                     _btnBack.SetFocus();
 
                     _lblTitle.Text = "Select an event schema:";
-                    var eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    var eventSchemas = EventSourceHelper.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
                     await _lvDetails.SetSourceAsync((IList)eventSchemas);
                     _lvDetails.SelectedItem = _selectedEventSchemaIdx;
 
@@ -388,7 +419,7 @@ namespace EventGenerator.Modules
                     _txtNumberOfEvents.Visible = false;
 
                     _lblTitle.Text = "Select an event type:";
-                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
+                    var eventTypes = EventSourceHelper.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
                     _lvDetails.SelectedItem = _selectedEventTypeIdx;
 
@@ -416,13 +447,13 @@ namespace EventGenerator.Modules
 
                     _selectedSourceNameIdx = _lvDetails.SelectedItem;
 
-                    var sources = EventSourceHandler.GetSources(_repositoryTree);
+                    var sources = EventSourceHelper.GetSources(_repositoryTree);
                     if (sources.Count > 0)
                         _selectedSourceName = sources[_selectedSourceNameIdx];
 
 
                     _lblTitle.Text = "Select a version type:";
-                    var versionTypes = EventSourceHandler.GetVersionTypes(_repositoryTree, _selectedSourceName);
+                    var versionTypes = EventSourceHelper.GetVersionTypes(_repositoryTree, _selectedSourceName);
                     await _lvDetails.SetSourceAsync((IList)versionTypes);
 
                     _btnNext.Enabled = (versionTypes.Count > 0) ? true : false;
@@ -434,12 +465,12 @@ namespace EventGenerator.Modules
 
                     _selectedVersionTypeIdx = _lvDetails.SelectedItem;
 
-                    versionTypes = EventSourceHandler.GetVersionTypes(_repositoryTree, _selectedSourceName);
+                    versionTypes = EventSourceHelper.GetVersionTypes(_repositoryTree, _selectedSourceName);
                     if (versionTypes.Count > 0)
                         _selectedVersionType = versionTypes[_selectedVersionTypeIdx];
 
                     _lblTitle.Text = "Select a version:";
-                    var versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
+                    var versions = EventSourceHelper.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     await _lvDetails.SetSourceAsync((IList)versions);
 
                     _btnNext.Enabled = (versions.Count > 0) ? true : false;
@@ -451,12 +482,12 @@ namespace EventGenerator.Modules
 
                     _selectedVersionIdx = _lvDetails.SelectedItem;
 
-                    versions = EventSourceHandler.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
+                    versions = EventSourceHelper.GetVersions(_repositoryTree, _selectedSourceName, _selectedVersionType);
                     if (versions.Count > 0)
                         _selectedVersion = versions[_selectedVersionIdx];
 
                     _lblTitle.Text = "Select an event schema:";
-                    var eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    var eventSchemas = EventSourceHelper.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
                     await _lvDetails.SetSourceAsync((IList)eventSchemas);
 
                     _btnNext.Enabled = (eventSchemas.Count > 0) ? true : false;
@@ -468,12 +499,12 @@ namespace EventGenerator.Modules
 
                     _selectedEventSchemaIdx = _lvDetails.SelectedItem;
 
-                    eventSchemas = EventSourceHandler.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
+                    eventSchemas = EventSourceHelper.GetEventSchemas(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion);
                     if (eventSchemas.Count > 0)
                         _selectedEventSchema = eventSchemas[_selectedEventSchemaIdx];
 
                     _lblTitle.Text = "Select an event type:";
-                    var eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
+                    var eventTypes = EventSourceHelper.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     await _lvDetails.SetSourceAsync((IList)eventTypes);
 
                     _btnNext.Enabled = (eventTypes.Count > 0) ? true : false;
@@ -483,7 +514,7 @@ namespace EventGenerator.Modules
                     _stage = "review";
                     _selectedEventTypeIdx = _lvDetails.SelectedItem;
 
-                    eventTypes = EventSourceHandler.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
+                    eventTypes = EventSourceHelper.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
                     _selectedEventType = eventTypes[_selectedEventTypeIdx];
 
                     _btnNext.Text = "_Generate";
@@ -522,19 +553,36 @@ namespace EventGenerator.Modules
             {
                 Application.MainLoop.Invoke(async () =>
                 {
-                    if (_txtNumberOfEvents == null || Editor._textView == null)
+                    if (_host == null || _txtNumberOfEvents == null || EditorService._textView == null || _dialog == null)
                         return;
 
-                    int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
-                    var result = await EventGeneratorApiHandler.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
-                    Application.RequestStop();
+                    try
+                    {
+                        int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
+                        var eventGeneratorApiService = _host.Services.GetRequiredService<IEventGeneratorApiService>();
+                        var result = await eventGeneratorApiService.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
+                        Application.RequestStop();
 
-                    if (_dialog == null)
-                        return;
-
-                    _dialog.RequestStop();
-                    Editor._textView.Text = result;
-                    Reset();
+                        _dialog.RequestStop();
+                        EditorService._textView.Text = result;
+                        Reset();
+                    }
+                    catch (Exception ex)
+                    {
+                        var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                        var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
+                        try
+                        {
+                            MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}", "Ok");
+                            Directory.CreateDirectory(directoryPath);
+                            File.WriteAllText(filePath, ex.ToString());
+                        }
+                        catch
+                        {
+                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
+                        }
+                        Application.RequestStop();
+                    }
                 });
             }
             return _dialogBgProc == null;
