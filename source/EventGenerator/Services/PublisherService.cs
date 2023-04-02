@@ -295,7 +295,7 @@ namespace EventGenerator.Services
                                         var errors = res.Item2.ToString();
                                         if (hasErrors)
                                             sb.AppendLine(errors);
-                                        
+
                                         Thread.Sleep(delayMs);
                                     }
                                 else if (token is JObject)
@@ -377,7 +377,7 @@ namespace EventGenerator.Services
 
                 if (_httpClientFactory == null)
                     throw new Exception("Http client initialization error");
-                
+
                 var httpClient = _httpClientFactory.CreateClient();
                 httpClient.DefaultRequestHeaders.Add("aeg-event-type", "Notification");
                 var httpResponseMessage = await httpClient.PostAsync(endpoint, requestContent);
@@ -402,8 +402,8 @@ namespace EventGenerator.Services
                 sb.AppendLine("Exception:");
                 sb.AppendLine(ex.ToString());
             }
-            
-            return Tuple.Create(hasError,sb);
+
+            return Tuple.Create(hasError, sb);
         }
     }
 

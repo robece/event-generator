@@ -8,7 +8,7 @@ using Terminal.Gui;
 
 namespace EventGenerator.Services
 {
-    internal class GeneratorService :IGeneratorService
+    internal class GeneratorService : IGeneratorService
     {
         #region private members
 
