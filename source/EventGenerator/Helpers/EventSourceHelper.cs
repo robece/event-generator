@@ -62,10 +62,10 @@
         {
             List<string> result = new List<string>();
 
-            string path = $"{sourceName}/{versionType}/{version}/examples/";
+            string path = $"{sourceName}/{versionType}/{version}/gpt-prompts/";
             int level = 5;
             result = GetList(repositoryTree, path, level, "tree");
-
+            result = result.FindAll(x => x.Contains("schema"));
             return result;
         }
 
@@ -73,8 +73,8 @@
         {
             List<string> result = new List<string>();
 
-            string path = $"{sourceName}/{versionType}/{version}/examples/{eventSchema}/ai/";
-            int level = 7;
+            string path = $"{sourceName}/{versionType}/{version}/gpt-prompts/{eventSchema}/";
+            int level = 6;
             result = GetList(repositoryTree, path, level, "blob");
             result = result.Select(s => s.Replace(".prompt", "")).ToList();
             return result;
