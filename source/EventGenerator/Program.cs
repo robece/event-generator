@@ -38,7 +38,6 @@ namespace EventGenerator
                 services.AddHttpClient();
 
                 // register the dependency injection
-                services.AddTransient<IEventGeneratorApiService, EventGeneratorApiService>();
                 services.AddTransient<IGitHubTreeService, GitHubTreeService>();
 
                 services.AddTransient<IEditorService, EditorService>();

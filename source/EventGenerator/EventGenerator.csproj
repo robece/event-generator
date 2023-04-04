@@ -12,9 +12,12 @@
     <None Remove="Modules\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Betalgo.OpenAI.GPT3" Version="6.8.3" />
+    <PackageReference Include="Jint" Version="3.0.0-beta-2049" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Polly" Version="7.2.3" />
     <PackageReference Include="Terminal.Gui" Version="1.10.0" />
   </ItemGroup>
 </Project>

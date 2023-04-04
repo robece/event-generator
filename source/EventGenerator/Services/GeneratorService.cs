@@ -1,8 +1,17 @@
-﻿using EventGenerator.Helpers;
+﻿using EventGenerator.Common;
+using EventGenerator.Helpers;
+using EventGenerator.Models;
 using EventGenerator.Services.Interfaces;
+using Jint;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json.Linq;
+using OpenAI.GPT3;
+using OpenAI.GPT3.Managers;
+using OpenAI.GPT3.ObjectModels.RequestModels;
+using Polly;
 using System.Collections;
+using System.Dynamic;
 using System.Text.RegularExpressions;
 using Terminal.Gui;
 
@@ -47,6 +56,9 @@ namespace EventGenerator.Services
         private Label? _lblSelectedEventType = null;
         private Label? _lblNumberOfEvents = null;
         private TextField? _txtNumberOfEvents = null;
+        private Label? _lblAPIKey = null;
+        private TextField? _txtAPIKey = null;
+        private CheckBox? _chkRememberAPIKey = null;
 
         #endregion
 
@@ -81,13 +93,13 @@ namespace EventGenerator.Services
                 var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
                 try
                 {
-                    MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}", "Ok");
+                    MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}.", "Ok");
                     Directory.CreateDirectory(directoryPath);
                     File.WriteAllText(filePath, ex.ToString());
                 }
                 catch
                 {
-                    MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
+                    MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}.", "Ok");
                 }
                 Application.RequestStop();
             }
@@ -225,7 +237,7 @@ namespace EventGenerator.Services
                 Width = 10,
                 Height = 1,
                 Visible = false,
-                Text = "10"
+                Text = "100"
             };
             _dialog.Add(_txtNumberOfEvents);
 
@@ -241,7 +253,7 @@ namespace EventGenerator.Services
                     _txtNumberOfEvents.Text = e;
                     _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
-                    MessageBox.Query("Error", "Input value is not a number", "Ok");
+                    MessageBox.Query("Error", "Input value is not a number.", "Ok");
 
                     return;
                 }
@@ -252,7 +264,7 @@ namespace EventGenerator.Services
                     _txtNumberOfEvents.Text = e;
                     _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
-                    MessageBox.Query("Error", "Max length reached", "Ok");
+                    MessageBox.Query("Error", "Max length reached.", "Ok");
 
                     return;
                 }
@@ -264,11 +276,59 @@ namespace EventGenerator.Services
                     _txtNumberOfEvents.Text = e;
                     _txtNumberOfEvents.CursorPosition = Math.Min(cp, _txtNumberOfEvents.Text.RuneCount);
 
-                    MessageBox.Query("Error", "Max value reached", "Ok");
+                    MessageBox.Query("Error", "Max value reached.", "Ok");
 
                     return;
                 }
             };
+
+            _lblAPIKey = new Label("OpenAI API Key:")
+            {
+                X = 1,
+                Y = Pos.Bottom(_txtNumberOfEvents) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 25,
+                Height = 1,
+                Visible = false
+            };
+            _dialog.Add(_lblAPIKey);
+
+            _txtAPIKey = new TextField("")
+            {
+                X = 1,
+                Y = Pos.Bottom(_lblAPIKey) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 80,
+                Height = 1,
+                Visible = false,
+                Text = string.Empty
+            };
+            _dialog.Add(_txtAPIKey);
+
+            _txtAPIKey.TextChanged += (e) =>
+            {
+                if (_txtAPIKey.Text.Length > 80)
+                {
+                    var cp = _txtAPIKey.CursorPosition;
+                    _txtAPIKey.Text = e;
+                    _txtAPIKey.CursorPosition = Math.Min(cp, _txtAPIKey.Text.RuneCount);
+
+                    MessageBox.Query("Error", "Max length reached.", "Ok");
+
+                    return;
+                }
+            };
+
+            _chkRememberAPIKey = new CheckBox("Remember this key", false)
+            {
+                X = 1,
+                Y = Pos.Bottom(_txtAPIKey) + 1,
+                TextAlignment = TextAlignment.Left,
+                Width = 50,
+                Height = 1,
+                Visible = false
+            };
+            _dialog.Add(_chkRememberAPIKey);
 
             _scrollBarView = new ScrollBarView(_lvDetails, true);
 
@@ -295,6 +355,21 @@ namespace EventGenerator.Services
             _lvDetails.DrawContent += LvDetails_DrawContent;
 
             _btnNext.SetFocus();
+
+            var settings = Common.Utils.GetSettings();
+
+            if (settings == null)
+                return;
+
+            if (_txtAPIKey == null)
+                return;
+
+            _txtAPIKey.Text = (string.IsNullOrEmpty(settings.OpenAIAPIKey)) ? string.Empty : settings.OpenAIAPIKey;
+
+            if (_chkRememberAPIKey == null)
+                return;
+
+            _chkRememberAPIKey.Checked = settings.RememberOpenAIAPIKey;
 
             Application.Run(_dialog);
         }
@@ -337,6 +412,9 @@ namespace EventGenerator.Services
             _lblSelectedEventSchema = null;
             _lblSelectedEventType = null;
             _txtNumberOfEvents = null;
+            _lblAPIKey = null;
+            _txtAPIKey = null;
+            _chkRememberAPIKey = null;
         }
 
         private async void _btnBack_Clicked()
@@ -345,7 +423,7 @@ namespace EventGenerator.Services
                 _lblTitle == null || _lvDetails == null ||
                 _lblSelectedSourceName == null || _lblSelectedVersionType == null ||
                 _lblSelectedVersion == null || _lblSelectedEventSchema == null || _lblSelectedEventType == null ||
-                _lblNumberOfEvents == null || _txtNumberOfEvents == null)
+                _lblNumberOfEvents == null || _txtNumberOfEvents == null || _lblAPIKey == null || _txtAPIKey == null || _chkRememberAPIKey == null)
                 return;
 
             switch (_stage)
@@ -417,6 +495,9 @@ namespace EventGenerator.Services
                     _lblSelectedEventType.Visible = false;
                     _lblNumberOfEvents.Visible = false;
                     _txtNumberOfEvents.Visible = false;
+                    _lblAPIKey.Visible = false;
+                    _txtAPIKey.Visible = false;
+                    _chkRememberAPIKey.Visible = false;
 
                     _lblTitle.Text = "Select an event type:";
                     var eventTypes = EventSourceHelper.GetEventTypes(_repositoryTree, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema);
@@ -435,7 +516,7 @@ namespace EventGenerator.Services
             _lblTitle == null || _lvDetails == null ||
             _lblSelectedSourceName == null || _lblSelectedVersionType == null ||
             _lblSelectedVersion == null || _lblSelectedEventSchema == null || _lblSelectedEventType == null ||
-            _lblNumberOfEvents == null || _txtNumberOfEvents == null)
+            _lblNumberOfEvents == null || _txtNumberOfEvents == null || _lblAPIKey == null || _txtAPIKey == null || _chkRememberAPIKey == null)
                 return;
 
             switch (_stage)
@@ -527,6 +608,10 @@ namespace EventGenerator.Services
                     _lblSelectedEventType.Visible = true;
                     _lblNumberOfEvents.Visible = true;
                     _txtNumberOfEvents.Visible = true;
+                    _lblAPIKey.Visible = true;
+                    _txtAPIKey.Visible = true;
+                    _chkRememberAPIKey.Visible = true;
+
                     _lblSelectedSourceName.Text = $"- System source: {_selectedSourceName}";
                     _lblSelectedVersionType.Text = $"- Version type: {_selectedVersionType}";
                     _lblSelectedVersion.Text = $"- Version: {_selectedVersion}";
@@ -537,8 +622,39 @@ namespace EventGenerator.Services
                     break;
                 case "review":
 
-                    if (string.IsNullOrEmpty((string?)_txtNumberOfEvents.Text))
+                    if (_chkRememberAPIKey == null)
                         return;
+
+                    var apiKey = string.Empty;
+                    if (_txtAPIKey != null)
+                        if (!string.IsNullOrEmpty(_txtAPIKey.Text.ToString()))
+                            apiKey = _txtAPIKey.Text.ToString();
+
+                    if (string.IsNullOrEmpty(apiKey))
+                    {
+                        MessageBox.ErrorQuery("Error", $"OpenAI API key required.", "Ok");
+                        return;
+                    }
+
+                    if (_chkRememberAPIKey.Checked)
+                    {
+                        var settings = Utils.GetSettings();
+
+                        if (settings == null)
+                        {
+                            MessageBox.ErrorQuery("Error", $"There was an error reading the settings file.", "Ok");
+                            return;
+                        }
+
+                        settings.OpenAIAPIKey = apiKey;
+                        settings.RememberOpenAIAPIKey = true;
+                        Utils.UpdateSettings(settings);
+                    }
+                    else
+                    {
+                        var settings = new Settings() { OpenAIAPIKey = string.Empty, RememberOpenAIAPIKey = false };
+                        Utils.UpdateSettings(settings);
+                    }
 
                     Application.MainLoop.AddTimeout(TimeSpan.FromMilliseconds(100), PrepareBackgroundProcess);
                     StartBackgroundProcessDialog();
@@ -553,14 +669,23 @@ namespace EventGenerator.Services
             {
                 Application.MainLoop.Invoke(async () =>
                 {
-                    if (_host == null || _txtNumberOfEvents == null || EditorService._textView == null || _dialog == null)
+                    if (_host == null || _txtNumberOfEvents == null || _txtAPIKey == null || EditorService._textView == null || _dialog == null)
                         return;
 
                     try
                     {
                         int numberOfEvents = Convert.ToInt16(_txtNumberOfEvents.Text.ToString());
-                        var eventGeneratorApiService = _host.Services.GetRequiredService<IEventGeneratorApiService>();
-                        var result = await eventGeneratorApiService.PostAsync(_selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
+
+                        var apiKey = string.Empty;
+                        if (_txtAPIKey != null)
+                            if (!string.IsNullOrEmpty(_txtAPIKey.Text.ToString()))
+                                apiKey = _txtAPIKey.Text.ToString();
+
+                        if (string.IsNullOrEmpty(apiKey))
+                            return;
+
+                        var result = await SendToGPTAndProcessResponse(apiKey, _selectedSourceName, _selectedVersionType, _selectedVersion, _selectedEventSchema, _selectedEventType, numberOfEvents);
+
                         Application.RequestStop();
 
                         _dialog.RequestStop();
@@ -573,13 +698,13 @@ namespace EventGenerator.Services
                         var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
                         try
                         {
-                            MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There was an error, check the log file for more details: {filePath}.", "Ok");
                             Directory.CreateDirectory(directoryPath);
                             File.WriteAllText(filePath, ex.ToString());
                         }
                         catch
                         {
-                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}.", "Ok");
                         }
                         Application.RequestStop();
                     }
@@ -613,6 +738,105 @@ namespace EventGenerator.Services
             _dialogBgProc.Add(_lblSubtitle);
 
             Application.Run(_dialogBgProc);
+        }
+
+        private async Task<string> SendToGPTAndProcessResponse(string openAIKey, string sourceName, string versionType, string version, string eventSchema, string eventType, int numberOfEvents)
+        {
+            var policy = Policy.Handle<Exception>().WaitAndRetryAsync(3,
+              retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+              (exception, calculatedWaitDuration) =>
+              {
+                  // Console.WriteLine($"Exception: {exception.Message}");
+              });
+
+            string response = string.Empty;
+
+            if (string.IsNullOrEmpty(sourceName) || string.IsNullOrEmpty(versionType) || string.IsNullOrEmpty(version) ||
+             string.IsNullOrEmpty(eventSchema) || string.IsNullOrEmpty(eventType) || numberOfEvents == 0)
+                throw new Exception("There was an error with the request parameters");
+
+            if (_httpClientFactory == null)
+                throw new Exception("Http client initialization error");
+
+            var httpClient = _httpClientFactory.CreateClient();
+            var contentUrl = $"https://raw.githubusercontent.com/robece/event-generator-specs/main/data-plane/{sourceName}/{versionType}/{version}/gpt-prompts/{eventSchema}/{eventType}.prompt";
+            var content = await httpClient.GetStringAsync(contentUrl);
+
+            if (string.IsNullOrEmpty(content))
+                throw new Exception("There was an error in the content response");
+
+            var methodsUrl = $"https://raw.githubusercontent.com/robece/event-generator-specs/main/data-plane/{sourceName}/{versionType}/{version}/gpt-prompts/common/Methods.prompt";
+            var methodsContent = await httpClient.GetStringAsync(methodsUrl);
+
+            if (string.IsNullOrEmpty(methodsContent))
+                throw new Exception("There was an error in the content response");
+
+            content = content.Replace("{{methods}}", $"{methodsContent}");
+            content = content.Replace("{{numberOfEvents}}", $"{numberOfEvents}");
+
+            var completionRequest = CreateCompletionCreateRequest(content);
+
+            var openAiService = new OpenAIService(new OpenAiOptions()
+            {
+                ApiKey = openAIKey
+            });
+
+            await policy.ExecuteAsync(async () =>
+            {
+                var completionResult = await openAiService.Completions.CreateCompletion(completionRequest);
+                if (completionResult.Successful)
+                {
+                    response = completionResult.Choices.First().Text;
+                    response = response.Replace("console.log", "log");
+
+                    var engine = new Engine().SetValue("log", new Action<string?>((b) =>
+                    {
+                        if (!string.IsNullOrEmpty(b))
+                            response = b.ToString();
+                    }));
+
+                    var engineResponse = engine.Execute(response);
+
+                    try
+                    {
+                        var token = JToken.Parse(response);
+                        if (token is not JArray)
+                            throw new Exception("Try again because is not an array");
+
+                        var events = token.ToObject<List<ExpandoObject>>();
+                        if (events != null)
+                            if (events.Count != numberOfEvents)
+                                throw new Exception("Try again because array of elements is not correct");
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new Exception($"Try again because content is not valid: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    if (completionResult.Error == null)
+                    {
+                        throw new Exception("Try again because there was an unknown error");
+                    }
+                    throw new Exception($"{completionResult.Error.Code}: {completionResult.Error.Message}");
+                }
+            });
+
+            return response;
+        }
+
+        private CompletionCreateRequest CreateCompletionCreateRequest(string content)
+        {
+            var completionRequest = new CompletionCreateRequest();
+            completionRequest.Model = OpenAI.GPT3.ObjectModels.Models.TextDavinciV3;
+            completionRequest.Temperature = 0.7f;
+            completionRequest.MaxTokens = 3000;
+            completionRequest.TopP = 1;
+            completionRequest.FrequencyPenalty = 0;
+            completionRequest.PresencePenalty = 0;
+            completionRequest.Prompt = content;
+            return completionRequest;
         }
 
         #endregion

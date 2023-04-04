@@ -10,7 +10,7 @@ namespace EventGenerator.Common
             var directoryPath = Path.Combine(Directory.GetCurrentDirectory(), "settings");
             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "settings", "settings.json");
             Directory.CreateDirectory(directoryPath);
-            var settings = new Settings() { AzureFunctionEndpoint = string.Empty, RememberAzureFunctionEndpoint = false };
+            var settings = new Settings() { AzureFunctionEndpoint = string.Empty, RememberAzureFunctionEndpoint = false, OpenAIAPIKey = string.Empty, RememberOpenAIAPIKey = false };
             var strSettings = JsonSerializer.Serialize(settings);
             File.WriteAllText(filePath, strSettings);
         }

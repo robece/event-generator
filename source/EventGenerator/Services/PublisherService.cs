@@ -147,7 +147,7 @@ namespace EventGenerator.Services
                             _txtAzureFunctionDelayMs.Text = e;
                             _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
-                            MessageBox.Query("Error", "Input value is not a number", "Ok");
+                            MessageBox.Query("Error", "Input value is not a number.", "Ok");
 
                             return;
                         }
@@ -158,7 +158,7 @@ namespace EventGenerator.Services
                             _txtAzureFunctionDelayMs.Text = e;
                             _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
-                            MessageBox.Query("Error", "Max length reached", "Ok");
+                            MessageBox.Query("Error", "Max length reached.", "Ok");
 
                             return;
                         }
@@ -170,7 +170,7 @@ namespace EventGenerator.Services
                             _txtAzureFunctionDelayMs.Text = e;
                             _txtAzureFunctionDelayMs.CursorPosition = Math.Min(cp, _txtAzureFunctionDelayMs.Text.RuneCount);
 
-                            MessageBox.Query("Error", "Max value reached", "Ok");
+                            MessageBox.Query("Error", "Max value reached.", "Ok");
 
                             return;
                         }
@@ -223,7 +223,7 @@ namespace EventGenerator.Services
 
                 if (settings == null)
                 {
-                    MessageBox.ErrorQuery("Error", $"There was an error reading the settings file", "Ok");
+                    MessageBox.ErrorQuery("Error", $"There was an error reading the settings file.", "Ok");
                     return;
                 }
 
@@ -253,7 +253,7 @@ namespace EventGenerator.Services
                 if (string.IsNullOrEmpty(endpoint))
                 {
                     Application.RequestStop();
-                    MessageBox.ErrorQuery("Error", "There is no endpoint registered", "Ok");
+                    MessageBox.ErrorQuery("Error", "There is no endpoint registered.", "Ok");
                     return false;
                 }
 
@@ -269,7 +269,7 @@ namespace EventGenerator.Services
                 if (string.IsNullOrEmpty(content))
                 {
                     Application.RequestStop();
-                    MessageBox.ErrorQuery("Error", "There are no events in the editor", "Ok");
+                    MessageBox.ErrorQuery("Error", "There are no events in the editor.", "Ok");
                     return false;
                 }
 
@@ -323,13 +323,13 @@ namespace EventGenerator.Services
                         var filePath = Path.Combine(directoryPath, $"{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.txt");
                         try
                         {
-                            MessageBox.ErrorQuery("Error", $"There were some exceptions during the publication, check the log file for more details: {filePath}", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There were some exceptions during the publication, check the log file for more details: {filePath}.", "Ok");
                             Directory.CreateDirectory(directoryPath);
                             File.WriteAllText(filePath, sb.ToString());
                         }
                         catch
                         {
-                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}", "Ok");
+                            MessageBox.ErrorQuery("Error", $"There was an error saving the file: {filePath}.", "Ok");
                         }
                         Application.RequestStop();
                     }
